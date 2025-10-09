@@ -1,24 +1,24 @@
 -- Add capitalize function to string library if it doesn't exist
 if not string.capitalize then
-    function string.capitalize(str)
-        if not str or str == "" or str == nil then
-            return "Unknown"
-        end
-        return str:gsub("(%l)(%w*)", function(first, rest)
-            return first:upper() .. rest
-        end)
-    end
+	function string.capitalize(str)
+		if not str or str == "" or str == nil then
+			return "Unknown"
+		end
+		return str:gsub("(%l)(%w*)", function(first, rest)
+			return first:upper() .. rest
+		end)
+	end
 end
 
 -- Function to truncate text to a maximum length
 local function short_text(text, maxLength)
-    if not text or text == "" or text == nil then
-        return "Unknown"
-    end
-    if string.len(text) > maxLength then
-        return text:sub(1, maxLength - 3) .. "..."
-    end
-    return text
+	if not text or text == "" or text == nil then
+		return "Unknown"
+	end
+	if string.len(text) > maxLength then
+		return text:sub(1, maxLength - 3) .. "..."
+	end
+	return text
 end
 
 if not BossCooldown then
@@ -47,7 +47,7 @@ function BossCooldown.create()
 	BossCooldown.widgets = {}
 
 	BossCooldown.window = openedWindows['bossButton']
-	
+
 	if not BossCooldown.window then
 		return
 	end
@@ -56,7 +56,7 @@ function BossCooldown.create()
 	if toggleFilterButton then
 		toggleFilterButton:setVisible(false)
 	end
-	
+
 	local newWindowButton = BossCooldown.window:recursiveGetChildById('newWindowButton')
 	if newWindowButton then
 		newWindowButton:setVisible(false)
@@ -64,7 +64,7 @@ function BossCooldown.create()
 
 	local contextMenuButton = BossCooldown.window:recursiveGetChildById('contextMenuButton')
 	local minimizeButton = BossCooldown.window:recursiveGetChildById('minimizeButton')
-	
+
 	if contextMenuButton and minimizeButton then
 		contextMenuButton:setVisible(true)
 		contextMenuButton:breakAnchors()
@@ -72,7 +72,7 @@ function BossCooldown.create()
 		contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
 		contextMenuButton:setMarginRight(7)
 		contextMenuButton:setMarginTop(0)
-		
+
 		contextMenuButton.onClick = function(widget, mousePos)
 			local pos = mousePos or g_window.getMousePosition()
 			return onBossExtra(pos)
@@ -80,7 +80,7 @@ function BossCooldown.create()
 	end
 
 	local lockButton = BossCooldown.window:recursiveGetChildById('lockButton')
-	
+
 	if lockButton and contextMenuButton then
 		lockButton:setVisible(true)
 		lockButton:breakAnchors()
@@ -130,7 +130,7 @@ function BossCooldown:checkTicks()
 		widget.tick = widget.tick - 1
 		widget.cooldown = os.time() + widget.tick
 		if widget.cooldown < os.time() then
-			widget.cooldown = os.time() + 60*365*60*24
+			widget.cooldown = os.time() + 60 * 365 * 60 * 24
 		end
 
 		local bossCooldownLabel = widget:recursiveGetChildById('bossNCooldown')
@@ -140,11 +140,11 @@ function BossCooldown:checkTicks()
 				bossCooldownLabel:setColor('#c0c0c0')
 				if widget.type ~= 'nocd' then
 					needUpdate = true
-					widget.cooldown = os.time() + 60*365*60*24
+					widget.cooldown = os.time() + 60 * 365 * 60 * 24
 				end
 				widget.type = 'nocd'
 			elseif widget.tick <= 60 then
-				bossCooldownLabel:setText(widget.tick ..'s')
+				bossCooldownLabel:setText(widget.tick .. 's')
 				bossCooldownLabel:setColor('#ff9854')
 				if widget.type ~= 'second' then
 					needUpdate = true
@@ -193,11 +193,11 @@ function BossCooldown:updateWindow()
 		table.sort(BossCooldown.cooldown, function(a, b)
 			local acd = a.cooldown
 			if acd < os.time() then
-				acd = os.time() + 60*365*60*24
+				acd = os.time() + 60 * 365 * 60 * 24
 			end
 			local bcd = b.cooldown
 			if bcd < os.time() then
-				bcd = os.time() + 60*365*60*24
+				bcd = os.time() + 60 * 365 * 60 * 24
 			end
 			return acd < bcd
 		end)
@@ -212,11 +212,11 @@ function BossCooldown:updateWindow()
 	local c = 1
 	for _, info in ipairs(BossCooldown.cooldown) do
 		local widget = g_ui.createWidget('BossInfo', contentsPanel.bosses)
-		
+
 		local creatureWidget = widget:recursiveGetChildById('creature')
 		local bossNameLabel = widget:recursiveGetChildById('bossName')
 		local bossCooldownLabel = widget:recursiveGetChildById('bossNCooldown')
-		
+
 		if creatureWidget then
 			if info.outfit then
 				creatureWidget:setOutfit(info.outfit)
@@ -232,14 +232,14 @@ function BossCooldown:updateWindow()
 				creatureWidget:setOutfit(fallbackOutfit)
 			end
 		end
-		
+
 		if bossNameLabel then
 			local bossName = info.name
-			
+
 			if not bossName or bossName == "" or bossName:trim() == "" then
 				bossName = "Boss " .. (info.bossId or "Unknown")
 			end
-			
+
 			local displayName = short_text(string.capitalize(bossName), 13)
 			bossNameLabel:setText(displayName)
 			widget:setTooltip(string.capitalize(bossName))
@@ -259,7 +259,7 @@ function BossCooldown:updateWindow()
 				bossCooldownLabel:setColor('#c0c0c0')
 				widget.type = 'nocd'
 			elseif resttime <= 60 then
-				bossCooldownLabel:setText(resttime ..'s')
+				bossCooldownLabel:setText(resttime .. 's')
 				bossCooldownLabel:setColor('#ff9854')
 				widget.type = 'second'
 			else
@@ -291,17 +291,17 @@ end
 
 function BossCooldown:setupCooldown(cooldown)
 	BossCooldown.cooldown = {}
-	
+
 	for i, cooldown in pairs(cooldown) do
 		local raceData = g_things.getRaceData(cooldown[1])
-		
+
 		local bossEntry = {
-			bossId = cooldown[1], 
-			cooldown = cooldown[2], 
-			name = raceData and raceData.name or "", 
+			bossId = cooldown[1],
+			cooldown = cooldown[2],
+			name = raceData and raceData.name or "",
 			outfit = raceData and raceData.outfit or nil
 		}
-		
+
 		BossCooldown.cooldown[#BossCooldown.cooldown + 1] = bossEntry
 	end
 
@@ -316,6 +316,7 @@ function checkBossSearch(text)
 		BossCooldown.search = text
 	end
 end
+
 function clearSearch()
 	BossCooldown.search = ''
 	BossCooldown.window.contentsPanel.searchText:setText('', false)
@@ -354,10 +355,12 @@ function toggleBossCDFocus(visible)
 		widget:setPhantom(true)
 	elseif widget then
 		widget:setPhantom(false)
-		widget.onClick = function() 
-			toggleBossCDFocus(not visible) 
+		widget.onClick = function()
+			modules.game_interface.toggleInternalFocus();
+			toggleBossCDFocus(not visible)
 		end
 	end
+	modules.game_interface.toggleFocus(visible, "bosscooldown")
 
 	if visible then
 		local text = BossCooldown.window.contentsPanel.searchText

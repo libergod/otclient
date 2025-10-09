@@ -28,16 +28,16 @@ function getCombatName(effectId)
   if not effectId then
     return "Unknown"
   end
-  
+
   -- Use the clientCombat table from player.lua
   if clientCombat and clientCombat[effectId] then
     return clientCombat[effectId].id or "Unknown"
   end
-  
+
   -- Fallback names if clientCombat is not available
   local combatNames = {
     [0] = "Physical",
-    [1] = "Fire", 
+    [1] = "Fire",
     [2] = "Earth",
     [3] = "Energy",
     [4] = "Ice",
@@ -48,20 +48,19 @@ function getCombatName(effectId)
     [9] = "Lifedrain",
     [10] = "Manadrain"
   }
-  
+
   return combatNames[effectId] or "Unknown"
 end
 
 -- objects
 function init()
-
-  analyserButton = modules.game_mainpanel.addToggleButton('analyzerButton', 
-                                                            tr('Open analytics selector window'),
-                                                            '/images/options/analyzers',
-                                                            toggle)
+  analyserButton = modules.game_mainpanel.addToggleButton('analyzerButton',
+    tr('Open analytics selector window'),
+    '/images/options/analyzers',
+    toggle)
 
   analyserButton:setOn(false)
-    
+
   analyserMiniWindow = g_ui.loadUI('analyser')
   analyserMiniWindow:disableResize()
   analyserMiniWindow:close()
@@ -72,7 +71,7 @@ function init()
   if toggleFilterButton then
     toggleFilterButton:setVisible(false)
   end
-  
+
   local newWindowButton = analyserMiniWindow:recursiveGetChildById('newWindowButton')
   if newWindowButton then
     newWindowButton:setVisible(false)
@@ -81,25 +80,25 @@ function init()
   -- Position contextMenuButton where toggleFilterButton was (to the left of minimize button)
   local contextMenuButton = analyserMiniWindow:recursiveGetChildById('contextMenuButton')
   local minimizeButton = analyserMiniWindow:recursiveGetChildById('minimizeButton')
-  
+
   if contextMenuButton and minimizeButton then
     contextMenuButton:setVisible(true)
     contextMenuButton:breakAnchors()
     contextMenuButton:addAnchor(AnchorTop, minimizeButton:getId(), AnchorTop)
     contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
-    contextMenuButton:setMarginRight(7)  -- Same margin as toggleFilterButton had
+    contextMenuButton:setMarginRight(7) -- Same margin as toggleFilterButton had
     contextMenuButton:setMarginTop(0)
   end
 
   -- Position lockButton to the left of contextMenuButton
   local lockButton = analyserMiniWindow:recursiveGetChildById('lockButton')
-  
+
   if lockButton and contextMenuButton then
     lockButton:setVisible(true)
     lockButton:breakAnchors()
     lockButton:addAnchor(AnchorTop, contextMenuButton:getId(), AnchorTop)
     lockButton:addAnchor(AnchorRight, contextMenuButton:getId(), AnchorLeft)
-    lockButton:setMarginRight(2)  -- Same margin as in miniwindow style
+    lockButton:setMarginRight(2) -- Same margin as in miniwindow style
     lockButton:setMarginTop(0)
   end
 
@@ -132,7 +131,7 @@ function init()
       openedWindows[id].closeButton.onClick = function() toggleAnalysers(id) end
       openedWindows[id]:close()
       local scrollbar = openedWindows[id]:getChildById('miniwindowScrollBar')
-      scrollbar:mergeStyle({ ['$!on'] = { }})
+      scrollbar:mergeStyle({ ['$!on'] = {} })
     end
   end
 
@@ -182,15 +181,14 @@ function init()
   })
 
   connect(Creature, {
-      onShieldChange = onShieldChange,
+    onShieldChange = onShieldChange,
   })
-  
+
   -- Set up party member tracking as backup (less frequent since shield changes trigger it)
   if partyMemberCheckEvent then
     partyMemberCheckEvent:cancel()
   end
   partyMemberCheckEvent = cycleEvent(checkPartyMembersChange, 5000) -- Every 5 seconds as backup
-
 end
 
 function terminate()
@@ -232,15 +230,14 @@ function terminate()
   })
 
   disconnect(Creature, {
-      onShieldChange = onShieldChange,
+    onShieldChange = onShieldChange,
   })
-  
+
   -- Clean up party member tracking
   if partyMemberCheckEvent then
     partyMemberCheckEvent:cancel()
     partyMemberCheckEvent = nil
   end
-
 end
 
 function startNewSession(login)
@@ -305,7 +302,7 @@ function offlineAnalyser()
     local characterDir = "/characterdata/" .. player:getId()
     pcall(function() g_resources.makeDir("/characterdata") end)
     pcall(function() g_resources.makeDir(characterDir) end)
-    
+
     -- Use pcall to safely attempt saves, catching any filesystem errors
     pcall(function() HuntingAnalyser:saveConfigJson() end)
     pcall(function() ImpactAnalyser:saveConfigJson() end)
@@ -324,7 +321,8 @@ function toggle()
     analyserMiniWindow.isOpen = false
   else
     if not analyserMiniWindow:getParent() then
-      local panel = modules.game_interface.findContentPanelAvailable(analyserMiniWindow, analyserMiniWindow:getMinimumHeight())
+      local panel = modules.game_interface.findContentPanelAvailable(analyserMiniWindow,
+        analyserMiniWindow:getMinimumHeight())
       if not panel then
         return
       end
@@ -377,13 +375,13 @@ function toggleAnalysers(buttonId)
       InputAnalyser:checkAnchos()
     elseif buttonId == 'xpButton' then
       XPAnalyser:checkAnchos()
-      XPAnalyser:forceUpdateUI()  -- Update UI with any accumulated XP data
+      XPAnalyser:forceUpdateUI() -- Update UI with any accumulated XP data
     elseif buttonId == 'bossButton' then
       toggleBossCDFocus(false)
       widget:focus()
     elseif buttonId == 'xpAnalyser' then
       XPAnalyser:checkAnchos()
-      XPAnalyser:forceUpdateUI()  -- Update UI with any accumulated XP data
+      XPAnalyser:forceUpdateUI() -- Update UI with any accumulated XP data
     end
 
     -- Properly assign widget to a panel if it doesn't have a parent
@@ -394,7 +392,7 @@ function toggleAnalysers(buttonId)
       end
       panel:addChild(widget)
     end
-    
+
     widget:getParent():moveChildToIndex(widget, #widget:getParent():getChildren())
     buttonWidget:setOn(true)
   end
@@ -403,14 +401,14 @@ end
 function onExperienceChange(localPlayer, value)
   -- This function is called when the player's total experience changes
   -- We should track the experience progression here
-  
+
   -- Calculate XP gain BEFORE setting up start exp
   local previousExp = XPAnalyser.lastExp
-  
+
   -- Setup start experience if this is the first time
   HuntingAnalyser:setupStartExp(value)
   XPAnalyser:setupStartExp(value)
-  
+
   -- Calculate XP gain from experience change using the previous value
   -- Only calculate gain if we have a previous value and current value is higher
   if previousExp and previousExp > 0 and value > previousExp then
@@ -420,7 +418,7 @@ function onExperienceChange(localPlayer, value)
     XPAnalyser:addRawXPGain(gain)
     XPAnalyser:addXpGain(gain)
   end
-  
+
   -- Update the last experience for next comparison
   XPAnalyser.lastExp = value
   HuntingAnalyser.lastExp = value
@@ -456,7 +454,6 @@ function onKillTracker(monsterName, monsterOutfit, dropItems)
   DropTrackerAnalyser:checkMonsterKilled(monsterName, monsterOutfit, dropItems)
 end
 
-
 -- Loot and Wast file
 function loadGainAndWastConfigJson()
   local config = {
@@ -469,7 +466,7 @@ function loadGainAndWastConfigJson()
   }
 
   if not g_game.isOnline() then return end
-  
+
   local player = g_game.getLocalPlayer()
   if not player then return end
 
@@ -497,15 +494,15 @@ end
 
 function saveGainAndWastConfigJson()
   if not g_game.isOnline() then return end
-  
+
   local player = g_game.getLocalPlayer()
   if not player then return end
-  
+
   -- Ensure the characterdata directory exists
   local characterDir = "/characterdata/" .. player:getId()
   pcall(function() g_resources.makeDir("/characterdata") end)
   pcall(function() g_resources.makeDir(characterDir) end)
-  
+
   local config = {
     gainGaugeTarget = LootAnalyser:getTarget(),
     gainGaugeVisible = LootAnalyser:gaugeIsVisible(),
@@ -524,12 +521,12 @@ function saveGainAndWastConfigJson()
   if result:len() > 100 * 1024 * 1024 then
     return g_logger.error("Something went wrong, file is above 100MB, won't be saved")
   end
-  
+
   -- Safely attempt to write the file, ignoring errors during logout
   local writeStatus, writeError = pcall(function()
     return g_resources.writeFileContents(file, result)
   end)
-  
+
   if not writeStatus then
     -- Log the error but don't spam the console during normal logout
     g_logger.debug("Could not save GainAndWaste config during logout: " .. tostring(writeError))

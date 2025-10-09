@@ -475,7 +475,7 @@ ExperienceRate = {
 
 PriceTypeEnum = {
     Market = 0,
-	Leader = 1
+    Leader = 1
 }
 
 -- Analyzer constants

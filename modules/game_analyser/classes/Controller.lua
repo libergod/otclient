@@ -15,43 +15,43 @@ end
 
 
 function ControllerAnalyser:startEvent()
-	if HuntingAnalyser then
-		HuntingAnalyser.session = os.time()
-	end
+    if HuntingAnalyser then
+        HuntingAnalyser.session = os.time()
+    end
     if LootAnalyser then
-		LootAnalyser.session = os.time()
-	end
+        LootAnalyser.session = os.time()
+    end
     if SupplyAnalyser then
-		SupplyAnalyser.session = os.time()
-	end
+        SupplyAnalyser.session = os.time()
+    end
     if ImpactAnalyser then
-		ImpactAnalyser.session = os.time()
-	end
+        ImpactAnalyser.session = os.time()
+    end
     if InputAnalyser then
-		InputAnalyser.session = os.time()
-	end
+        InputAnalyser.session = os.time()
+    end
     if XPAnalyser then
-		XPAnalyser.session = os.time()
-	end
+        XPAnalyser.session = os.time()
+    end
     if DropTrackerAnalyser then
-		DropTrackerAnalyser.session = os.time()
-	end
+        DropTrackerAnalyser.session = os.time()
+    end
     if PartyHuntAnalyser then
-		PartyHuntAnalyser.session = os.time()
-	end
+        PartyHuntAnalyser.session = os.time()
+    end
 
-	if ControllerAnalyser.eventGraph then ControllerAnalyser.eventGraph:cancel() end
-	if ControllerAnalyser.event250 then ControllerAnalyser.event250:cancel() end
-	if ControllerAnalyser.event1000 then ControllerAnalyser.event1000:cancel() end
-	if ControllerAnalyser.event2000 then ControllerAnalyser.event2000:cancel() end
+    if ControllerAnalyser.eventGraph then ControllerAnalyser.eventGraph:cancel() end
+    if ControllerAnalyser.event250 then ControllerAnalyser.event250:cancel() end
+    if ControllerAnalyser.event1000 then ControllerAnalyser.event1000:cancel() end
+    if ControllerAnalyser.event2000 then ControllerAnalyser.event2000:cancel() end
 
     ControllerAnalyser.event250 = cycleEvent(function()
         if g_game.isOnline() then
             if BossCooldown then
-				BossCooldown:checkTicks()
-			end
+                BossCooldown:checkTicks()
+            end
         end
-	end, 250)
+    end, 250)
 
     ControllerAnalyser.event1000 = cycleEvent(function()
         if g_game.isOnline() then
@@ -78,8 +78,8 @@ function ControllerAnalyser:startEvent()
                 SupplyAnalyser:checkSupplyHour()
             end
         end
-	end, 1000)
-	ControllerAnalyser.event2000 = cycleEvent(function()
+    end, 1000)
+    ControllerAnalyser.event2000 = cycleEvent(function()
         if g_game.isOnline() then
             if InputAnalyser then
                 InputAnalyser:updateWindow()
@@ -88,8 +88,8 @@ function ControllerAnalyser:startEvent()
                 SupplyAnalyser:checkBalance()
             end
         end
-	end, 2000)
-	ControllerAnalyser.eventGraph = cycleEvent(function()
+    end, 2000)
+    ControllerAnalyser.eventGraph = cycleEvent(function()
         if g_game.isOnline() then
             if LootAnalyser then
                 LootAnalyser:updateGraphics()
@@ -101,7 +101,7 @@ function ControllerAnalyser:startEvent()
                 XPAnalyser:updateWindow()
             end
         end
-	end, 60*1000)
+    end, 60 * 1000)
 
 
     if ImpactAnalyser then

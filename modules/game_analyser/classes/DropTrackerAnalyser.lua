@@ -1,71 +1,71 @@
 -- Add capitalize function to string library (force override)
 function string.capitalize(str)
-    if not str or str == "" then
-        return str
-    end
-    
-    -- Split by spaces, capitalize each word, then join back
-    local words = {}
-    for word in str:gmatch("%S+") do
-        if word:len() > 0 then
-            -- Convert word to lowercase, then capitalize first letter
-            local lowerWord = word:lower()
-            local capitalizedWord = lowerWord:sub(1, 1):upper() .. lowerWord:sub(2)
-            table.insert(words, capitalizedWord)
-        end
-    end
-    
-    return table.concat(words, " ")
+	if not str or str == "" then
+		return str
+	end
+
+	-- Split by spaces, capitalize each word, then join back
+	local words = {}
+	for word in str:gmatch("%S+") do
+		if word:len() > 0 then
+			-- Convert word to lowercase, then capitalize first letter
+			local lowerWord = word:lower()
+			local capitalizedWord = lowerWord:sub(1, 1):upper() .. lowerWord:sub(2)
+			table.insert(words, capitalizedWord)
+		end
+	end
+
+	return table.concat(words, " ")
 end
 
 -- Missing utility functions
 local function formatMoney(value, separator)
-    return comma_value(tostring(value))
+	return comma_value(tostring(value))
 end
 
 local function getItemServerName(itemId)
-    local thingType = g_things.getThingType(itemId, ThingCategoryItem)
-    if thingType then
-        return thingType:getName()
-    end
-    return "Unknown Item"
+	local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+	if thingType then
+		return thingType:getName()
+	end
+	return "Unknown Item"
 end
 
 local function short_text(text, maxLength)
-    if not text then
-        return ""
-    end
-    if string.len(text) > maxLength then
-        return text:sub(1, maxLength - 3) .. "..."
-    end
-    return text
+	if not text then
+		return ""
+	end
+	if string.len(text) > maxLength then
+		return text:sub(1, maxLength - 3) .. "..."
+	end
+	return text
 end
 
 -- Helper function to get item color based on value
 local function getItemColor(itemId)
-    local thingType = g_things.getThingType(itemId, ThingCategoryItem)
-    if thingType then
-        local price = thingType:getMeanPrice() or 0
-        if price >= 1000000 then
-            return "#ffff00"  -- yellow
-        elseif price >= 100000 then
-            return "#ff00ff"  -- purple/magenta
-        elseif price >= 10000 then
-            return "#0080ff"  -- blue
-        elseif price >= 1000 then
-            return "#00ff00"  -- green
-        elseif price >= 50 then
-            return "#808080"  -- grey
-        else
-            return "#ffffff"  -- white
-        end
-    end
-    return "#ffffff"  -- default white
+	local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+	if thingType then
+		local price = thingType:getMeanPrice() or 0
+		if price >= 1000000 then
+			return "#ffff00" -- yellow
+		elseif price >= 100000 then
+			return "#ff00ff" -- purple/magenta
+		elseif price >= 10000 then
+			return "#0080ff" -- blue
+		elseif price >= 1000 then
+			return "#00ff00" -- green
+		elseif price >= 50 then
+			return "#808080" -- grey
+		else
+			return "#ffffff" -- white
+		end
+	end
+	return "#ffffff" -- default white
 end
 
 -- Helper function to append colored text to a table
 local function setStringColor(textTable, text, color)
-    table.insert(textTable, "{" .. text .. ", " .. color .. "}")
+	table.insert(textTable, "{" .. text .. ", " .. color .. "}")
 end
 
 if not DropTrackerAnalyser then
@@ -85,7 +85,7 @@ end
 
 function DropTrackerAnalyser:create()
 	DropTrackerAnalyser.window = openedWindows['dropButton']
-	
+
 	if not DropTrackerAnalyser.window then
 		return
 	end
@@ -95,7 +95,7 @@ function DropTrackerAnalyser:create()
 	if toggleFilterButton then
 		toggleFilterButton:setVisible(false)
 	end
-	
+
 	local newWindowButton = DropTrackerAnalyser.window:recursiveGetChildById('newWindowButton')
 	if newWindowButton then
 		newWindowButton:setVisible(false)
@@ -104,15 +104,15 @@ function DropTrackerAnalyser:create()
 	-- Position contextMenuButton where toggleFilterButton was (to the left of minimize button)
 	local contextMenuButton = DropTrackerAnalyser.window:recursiveGetChildById('contextMenuButton')
 	local minimizeButton = DropTrackerAnalyser.window:recursiveGetChildById('minimizeButton')
-	
+
 	if contextMenuButton and minimizeButton then
 		contextMenuButton:setVisible(true)
 		contextMenuButton:breakAnchors()
 		contextMenuButton:addAnchor(AnchorTop, minimizeButton:getId(), AnchorTop)
 		contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
-		contextMenuButton:setMarginRight(7)  -- Same margin as toggleFilterButton had
+		contextMenuButton:setMarginRight(7) -- Same margin as toggleFilterButton had
 		contextMenuButton:setMarginTop(0)
-		
+
 		-- Set up contextMenuButton click handler to show our menu
 		contextMenuButton.onClick = function(widget, mousePos)
 			local pos = mousePos or g_window.getMousePosition()
@@ -122,13 +122,13 @@ function DropTrackerAnalyser:create()
 
 	-- Position lockButton to the left of contextMenuButton
 	local lockButton = DropTrackerAnalyser.window:recursiveGetChildById('lockButton')
-	
+
 	if lockButton and contextMenuButton then
 		lockButton:setVisible(true)
 		lockButton:breakAnchors()
 		lockButton:addAnchor(AnchorTop, contextMenuButton:getId(), AnchorTop)
 		lockButton:addAnchor(AnchorRight, contextMenuButton:getId(), AnchorLeft)
-		lockButton:setMarginRight(2)  -- Same margin as in miniwindow style
+		lockButton:setMarginRight(2) -- Same margin as in miniwindow style
 		lockButton:setMarginTop(0)
 	end
 
@@ -159,10 +159,10 @@ function DropTrackerAnalyser:managerDropItem(itemId, shouldTrack)
 			DropTrackerAnalyser.trackedItems[itemId] = nil
 		end
 	end
-	
+
 	-- Update the display
 	DropTrackerAnalyser:updateWindow(true)
-	
+
 	-- Save the configuration
 	DropTrackerAnalyser:saveConfigJson()
 end
@@ -246,7 +246,7 @@ function DropTrackerAnalyser:updateWindow(ignoreVisible)
 				monsterWidget.monster:setOutfit(monsterDrop.outfit)
 				local capitalizedName = string.capitalize(monsterDrop.monsterName)
 				monsterWidget.name:setText(capitalizedName)
-				monsterWidget.drops:setText("(" ..formatMoney(monsterDrop.count, ",") .. ")")
+				monsterWidget.drops:setText("(" .. formatMoney(monsterDrop.count, ",") .. ")")
 				monsterDrop.widget = monsterWidget
 			end
 
@@ -277,7 +277,7 @@ function DropTrackerAnalyser:updateWindow(ignoreVisible)
 					monsterWidget.monster:setOutfit(monsterDrop.outfit)
 					local capitalizedName = string.capitalize(monsterDrop.monsterName)
 					monsterWidget.name:setText(capitalizedName)
-					monsterWidget.drops:setText("(" ..formatMoney(monsterDrop.count, ",") .. ")")
+					monsterWidget.drops:setText("(" .. formatMoney(monsterDrop.count, ",") .. ")")
 					-- we also save the reference for later on use
 					monsterDrop.widget = monsterWidget
 				else
@@ -336,38 +336,40 @@ function DropTrackerAnalyser:updateWindow(ignoreVisible)
 end
 
 function DropTrackerAnalyser:sendDropedItems(consoleMessage)
-    -- Now that textmessage.lua handles colored formatting for ValuableLoot,
-    -- we can use the same colored message for both screen and console
-    if g_game.isOnline() then
-        modules.game_textmessage.displayMessage(MessageModes.ValuableLoot, consoleMessage)
-    end
+	-- Now that textmessage.lua handles colored formatting for ValuableLoot,
+	-- we can use the same colored message for both screen and console
+	if g_game.isOnline() then
+		modules.game_textmessage.displayMessage(MessageModes.ValuableLoot, consoleMessage)
+	end
 end
 
 function DropTrackerAnalyser:tryAddingMonsterDrop(item, monsterName, monsterOutfit, dropItems, dropedItems)
 	local itemId = item:getId()
 	local tracker = DropTrackerAnalyser.trackedItems[itemId]
 	local itemPrice = item:getMeanPrice() and item:getMeanPrice() or 0
-	
+
 	-- Check if item is explicitly tracked
 	if tracker then
 		-- Item is explicitly being tracked
 		dropedItems[#dropedItems + 1] = itemId
 		tracker.dropCount = tracker.dropCount + item:getCount()
 		tracker.recordStartTimestamp = os.time()
-		tracker.monsterDrop[#tracker.monsterDrop + 1] = {monsterName = monsterName, outfit = monsterOutfit, time = os.time(), count = item:getCount()}
+		tracker.monsterDrop[#tracker.monsterDrop + 1] = { monsterName = monsterName, outfit = monsterOutfit, time = os
+		.time(), count = item:getCount() }
 		return
 	end
-	
+
 	-- Check if item should be auto-tracked based on value
 	if DropTrackerAnalyser.autoTrackAboveValue > 0 and itemPrice >= DropTrackerAnalyser.autoTrackAboveValue then
 		-- Auto-track this valuable item (non-persistent)
-		DropTrackerAnalyser.trackedItems[itemId] = {monsterDrop = {}, recordStartTimestamp = os.time(), dropCount = 0, persistent = false}
+		DropTrackerAnalyser.trackedItems[itemId] = { monsterDrop = {}, recordStartTimestamp = os.time(), dropCount = 0, persistent = false }
 		tracker = DropTrackerAnalyser.trackedItems[itemId]
-		
+
 		dropedItems[#dropedItems + 1] = itemId
 		tracker.dropCount = tracker.dropCount + item:getCount()
 		tracker.recordStartTimestamp = os.time()
-		tracker.monsterDrop[#tracker.monsterDrop + 1] = {monsterName = monsterName, outfit = monsterOutfit, time = os.time(), count = item:getCount()}
+		tracker.monsterDrop[#tracker.monsterDrop + 1] = { monsterName = monsterName, outfit = monsterOutfit, time = os
+		.time(), count = item:getCount() }
 	end
 end
 
@@ -383,7 +385,7 @@ function DropTrackerAnalyser:checkMonsterKilled(monsterName, monsterOutfit, drop
 
 	if #dropedItems ~= 0 then
 		local consoleMessage = "{Valuable loot:, #f0b400}"
-		
+
 		local first = true
 		for _, itemId in pairs(dropedItems) do
 			local name = getItemServerName(itemId)
@@ -394,19 +396,19 @@ function DropTrackerAnalyser:checkMonsterKilled(monsterName, monsterOutfit, drop
 			if not itemId or itemId == 0 then
 				itemId = 0
 			end
-			
+
 			if not first then
 				consoleMessage = consoleMessage .. "{,, #f0b400}"
 			else
 				first = false
 			end
-			
+
 			-- Use the server loot message format that ItemsDatabase.setColorLootMessage expects
 			consoleMessage = consoleMessage .. "{ , #f0b400}{" .. itemId .. "|" .. name .. "}"
 		end
 
 		consoleMessage = consoleMessage .. "{ dropped by " .. monsterName .. "!, #f0b400}"
-		
+
 		DropTrackerAnalyser:sendDropedItems(consoleMessage)
 	end
 
@@ -427,7 +429,7 @@ function DropTrackerAnalyser:removeItem(itemId)
 	if DropTrackerAnalyser.trackedItems[itemId] then
 		DropTrackerAnalyser.trackedItems[itemId] = nil
 	end
-	
+
 	-- Update Cyclopedia using direct helper functions (avoiding circular dependency)
 	-- Try both access patterns to find the correct one
 	local cyclopediaItems = nil
@@ -438,19 +440,19 @@ function DropTrackerAnalyser:removeItem(itemId)
 	elseif modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.Items then
 		cyclopediaItems = modules.game_cyclopedia.Cyclopedia.Items
 	end
-	
+
 	if cyclopediaItems and cyclopediaItems.removeFromDropTrackerDirectly then
 		cyclopediaItems.removeFromDropTrackerDirectly(itemId)
-		
+
 		-- Also refresh the current item display if available
 		if cyclopediaItems.refreshCurrentItem then
 			cyclopediaItems.refreshCurrentItem()
 		end
 	end
-	
+
 	-- Update the display
 	DropTrackerAnalyser:updateWindow(true)
-	
+
 	-- Save the configuration
 	DropTrackerAnalyser:saveConfigJson()
 end
@@ -461,10 +463,10 @@ function DropTrackerAnalyser:removeAllItems()
 	for itemId, _ in pairs(DropTrackerAnalyser.trackedItems) do
 		table.insert(itemIds, itemId)
 	end
-	
+
 	-- Clear all tracked items
 	DropTrackerAnalyser.trackedItems = {}
-	
+
 	-- Update Cyclopedia using direct helper functions (avoiding circular dependency)
 	-- Use the same access pattern that worked for removeItem
 	local cyclopediaItems = nil
@@ -475,34 +477,34 @@ function DropTrackerAnalyser:removeAllItems()
 	elseif modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.Items then
 		cyclopediaItems = modules.game_cyclopedia.Cyclopedia.Items
 	end
-	
+
 	if cyclopediaItems and cyclopediaItems.removeAllFromDropTrackerDirectly then
 		cyclopediaItems.removeAllFromDropTrackerDirectly()
-		
+
 		-- Also refresh the current item display if available
 		if cyclopediaItems.refreshCurrentItem then
 			cyclopediaItems.refreshCurrentItem()
 		end
 	end
-	
+
 	-- Update the display
 	DropTrackerAnalyser:updateWindow(true)
-	
+
 	-- Save the configuration
 	DropTrackerAnalyser:saveConfigJson()
 end
 
 function DropTrackerAnalyser:showItemContextMenu(widget, mousePos, itemId)
 	local menu = g_ui.createWidget('PopupMenu')
-	
+
 	menu:addOption('Remove', function()
 		DropTrackerAnalyser:removeItem(itemId)
 	end)
-	
+
 	menu:addOption('Remove All', function()
 		DropTrackerAnalyser:removeAllItems()
 	end)
-	
+
 	menu:display(mousePos)
 end
 
@@ -529,7 +531,6 @@ function onDropTrackerExtra(mousePosition)
 	end
 end
 
-
 function DropTrackerAnalyser:loadConfigJson()
 	local config = {
 		autoTrackAboveValue = 0,
@@ -537,8 +538,8 @@ function DropTrackerAnalyser:loadConfigJson()
 	}
 
 	local player = g_game.getLocalPlayer()
-	if not player then 
-		return 
+	if not player then
+		return
 	end
 
 	local playerId = player:getId()
@@ -555,9 +556,10 @@ function DropTrackerAnalyser:loadConfigJson()
 		config = result
 	end
 
-  table.clear(DropTrackerAnalyser.trackedItems)
+	table.clear(DropTrackerAnalyser.trackedItems)
 	for _, i in pairs(config.trackedItems) do
-		DropTrackerAnalyser.trackedItems[i.objectType] = {monsterDrop = {}, recordStartTimestamp = i.recordStartTimestamp, dropCount = i.dropCount, persistent = true}
+		DropTrackerAnalyser.trackedItems[i.objectType] = { monsterDrop = {}, recordStartTimestamp = i
+		.recordStartTimestamp, dropCount = i.dropCount, persistent = true }
 	end
 
 	-- Load tracked items from Cyclopedia configuration
@@ -575,9 +577,9 @@ function DropTrackerAnalyser:loadConfigJson()
 					if itemId and not DropTrackerAnalyser.trackedItems[itemId] then
 						-- Add item as persistent tracked item
 						DropTrackerAnalyser.trackedItems[itemId] = {
-							monsterDrop = {}, 
-							recordStartTimestamp = os.time(), 
-							dropCount = 0, 
+							monsterDrop = {},
+							recordStartTimestamp = os.time(),
+							dropCount = 0,
 							persistent = true
 						}
 					end
@@ -607,8 +609,8 @@ function DropTrackerAnalyser:saveConfigJson()
 	end
 
 	local player = g_game.getLocalPlayer()
-	if not player then 
-		return 
+	if not player then
+		return
 	end
 
 	-- Ensure the characterdata directory exists
@@ -629,9 +631,8 @@ function DropTrackerAnalyser:saveConfigJson()
 	local writeStatus, writeError = pcall(function()
 		return g_resources.writeFileContents(file, result)
 	end)
-	
+
 	if not writeStatus then
 		-- Silently handle write errors during logout
 	end
 end
-
