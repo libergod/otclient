@@ -193,6 +193,8 @@ find_package(ZLIB REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
+find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
+
 if(APPLE)
   # Required for Physfs
   find_library(FOUNDATION Foundation REQUIRED)
@@ -280,6 +282,11 @@ set(SOURCE_FILES
         framework/net/protocolhttp.cpp
         framework/net/httplogin.cpp
         framework/net/server.cpp
+        framework/html/queryselector.cpp
+        framework/html/htmlnode.cpp
+        framework/html/htmlparser.cpp
+        framework/html/htmlmanager.cpp
+        framework/html/cssparser.cpp
         framework/otml/otmldocument.cpp
         framework/otml/otmlemitter.cpp
         framework/otml/otmlexception.cpp
@@ -412,6 +419,7 @@ if (TOGGLE_FRAMEWORK_GRAPHICS)
           framework/ui/uiwidgetbasestyle.cpp
           framework/ui/uiwidgetimage.cpp
           framework/ui/uiwidgettext.cpp
+          framework/ui/uiwidgethtml.cpp
           framework/ui/uiqrcode.cpp
   )
 endif()
@@ -493,6 +501,7 @@ if(MSVC)
           ${PHYSFS_INCLUDE_DIR}
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
+          ${CPPCODEC_INCLUDE_DIRS}
   )
   target_link_libraries(${PROJECT_NAME}
           PRIVATE
@@ -538,6 +547,7 @@ elseif(ANDROID)
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${MINIZIP_INCLUDE_DIR}
+          ${CPPCODEC_INCLUDE_DIRS}
   )
   target_link_libraries(${PROJECT_NAME}
           PRIVATE
@@ -585,6 +595,7 @@ elseif(WASM)
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
           ${BROWSER_INCLUDE_DIR}
+          ${CPPCODEC_INCLUDE_DIRS}
   )
   target_link_libraries(${PROJECT_NAME}
           PRIVATE
@@ -669,6 +680,7 @@ else() # Linux
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
+          ${CPPCODEC_INCLUDE_DIRS}
   )
   target_link_libraries(${PROJECT_NAME}
           PRIVATE

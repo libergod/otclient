@@ -1,3 +1,49 @@
+-- Missing utility functions
+local function formatMoney(value, separator)
+	return comma_value(tostring(value))
+end
+
+-- Enhanced number formatting function with new K, KK suffixes
+local function formatLargeNumber(value)
+	if not value then
+		return "0"
+	end
+
+	-- Ensure we have a number
+	local numValue = tonumber(value)
+	if not numValue or numValue == 0 then
+		return "0"
+	end
+
+	local absValue = math.abs(numValue)
+	local isNegative = numValue < 0
+	local prefix = isNegative and "-" or ""
+
+	if absValue >= 100000000 then
+		-- Values 100,000,000+ use KK notation
+		-- Example: 100,700,000 = 1,007KK, 345,666,000 = 3,456KK
+		local kkValue = math.floor(absValue / 100000)
+		return prefix .. comma_value(tostring(kkValue)) .. "KK"
+	elseif absValue >= 10000000 then
+		-- Values 10,000,000 to 99,999,999 use K notation
+		-- Example: 16,667,000 = 16,667K
+		local kValue = math.floor(absValue / 1000)
+		return prefix .. comma_value(tostring(kValue)) .. "K"
+	else
+		-- Values 1 to 9,999,999 show as is
+		return prefix .. comma_value(tostring(math.floor(absValue)))
+	end
+end
+
+-- Compatibility functions for MiscAnalyzer
+local function format_thousand(value, useComma)
+	return formatLargeNumber(value)
+end
+
+local function numberToStr(value)
+	return formatLargeNumber(value)
+end
+
 if not MiscAnalyzer then
 	MiscAnalyzer = {
 		launchTime = 0,
@@ -14,17 +60,28 @@ if not MiscAnalyzer then
 	MiscAnalyzer.__index = MiscAnalyzer
 end
 
+-- Function to truncate text to a maximum length
+local function short_text(text, maxLength)
+	if not text then
+		return ""
+	end
+	if string.len(text) > maxLength then
+		return text:sub(1, maxLength - 3) .. "..."
+	end
+	return text
+end
+
 local ImbuementSkills = {
-	[1] = {name = "Critical Hit", icon = "critical"},
-	[2] = {name = "Mana Leech", healing = "mana points", shortLenght = 5, placeholder = "Mana Gain", icon = "mana-leech"},
-	[3] = {name = "Life Leech", healing = "health points", shortLenght = 6, placeholder = "Life Gain", icon = "life-leech"}
+	[1] = { name = "Critical Hit", icon = "critical" },
+	[2] = { name = "Mana Leech", healing = "mana points", shortLenght = 5, placeholder = "Mana Gain", icon = "mana-leech" },
+	[3] = { name = "Life Leech", healing = "health points", shortLenght = 6, placeholder = "Life Gain", icon = "life-leech" }
 }
 
 local SpecialSkills = {
-	[1] = {name = "Onslaught"},
-	[2] = {name = "Ruse"},
-	[3] = {name = "Momentum"},
-	[4] = {name = "Transcendence"}
+	[1] = { name = "Onslaught" },
+	[2] = { name = "Ruse" },
+	[3] = { name = "Momentum" },
+	[4] = { name = "Transcendence" }
 }
 
 function MiscAnalyzer:create()
@@ -36,7 +93,7 @@ function MiscAnalyzer:create()
 	MiscAnalyzer.currentOverView = "none"
 
 	MiscAnalyzer.window = openedWindows['miscButton']
-	
+
 	if not MiscAnalyzer.window then
 		return
 	end
@@ -46,7 +103,7 @@ function MiscAnalyzer:create()
 	if toggleFilterButton then
 		toggleFilterButton:setVisible(false)
 	end
-	
+
 	local newWindowButton = MiscAnalyzer.window:recursiveGetChildById('newWindowButton')
 	if newWindowButton then
 		newWindowButton:setVisible(false)
@@ -55,15 +112,15 @@ function MiscAnalyzer:create()
 	-- Position contextMenuButton where toggleFilterButton was (to the left of minimize button)
 	local contextMenuButton = MiscAnalyzer.window:recursiveGetChildById('contextMenuButton')
 	local minimizeButton = MiscAnalyzer.window:recursiveGetChildById('minimizeButton')
-	
+
 	if contextMenuButton and minimizeButton then
 		contextMenuButton:setVisible(true)
 		contextMenuButton:breakAnchors()
 		contextMenuButton:addAnchor(AnchorTop, minimizeButton:getId(), AnchorTop)
 		contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
-		contextMenuButton:setMarginRight(7)  -- Same margin as toggleFilterButton had
+		contextMenuButton:setMarginRight(7) -- Same margin as toggleFilterButton had
 		contextMenuButton:setMarginTop(0)
-		
+
 		-- Set up contextMenuButton click handler to show our menu
 		contextMenuButton.onClick = function(widget, mousePos)
 			local pos = mousePos or g_window.getMousePosition()
@@ -73,13 +130,13 @@ function MiscAnalyzer:create()
 
 	-- Position lockButton to the left of contextMenuButton
 	local lockButton = MiscAnalyzer.window:recursiveGetChildById('lockButton')
-	
+
 	if lockButton and contextMenuButton then
 		lockButton:setVisible(true)
 		lockButton:breakAnchors()
 		lockButton:addAnchor(AnchorTop, contextMenuButton:getId(), AnchorTop)
 		lockButton:addAnchor(AnchorRight, contextMenuButton:getId(), AnchorLeft)
-		lockButton:setMarginRight(2)  -- Same margin as in miniwindow style
+		lockButton:setMarginRight(2) -- Same margin as in miniwindow style
 		lockButton:setMarginTop(0)
 	end
 end
@@ -101,15 +158,15 @@ function MiscAnalyzer:getPerHourValue(value)
 		return 0
 	end
 
-    local sessionDuration = math.max(1, os.time() - session)
-    if sessionDuration <= 0 then
-        return 0 
-    end
+	local sessionDuration = math.max(1, os.time() - session)
+	if sessionDuration <= 0 then
+		return 0
+	end
 
 	local hitsPerSecond = value / sessionDuration
-    local hitsPerHour = hitsPerSecond * 3600
+	local hitsPerHour = hitsPerSecond * 3600
 
-    return format_thousand(math.floor(hitsPerHour + 0.5)) -- Arredonda para o n�mero inteiro mais pr�ximo
+	return format_thousand(math.floor(hitsPerHour + 0.5)) -- Arredonda para o n�mero inteiro mais pr�ximo
 end
 
 function MiscAnalyzer:updateWindow(updateScroll, ignoreVisible)
@@ -215,11 +272,13 @@ function MiscAnalyzer:updateImbuements(contentsPanel)
 
 			local data = ImbuementSkills[id]
 			widget.effects:setImageSource(string.format("/images/game/analyzer/misc/%s", data.icon))
-			
+
 			if id > 1 then
 				local converted = numberToStr(amount)
 				widget.total:setText(numberToStr(amount))
-				widget.tooltip:setTooltip(string.format("Your %s has healead you a total of %s %s\n\nYou're healing %s %s per hour", data.name:lower(), format_thousand(amount), data.healing, MiscAnalyzer:getPerHourValue(amount), data.healing))
+				widget.tooltip:setTooltip(string.format(
+				"Your %s has healead you a total of %s %s\n\nYou're healing %s %s per hour", data.name:lower(),
+					format_thousand(amount), data.healing, MiscAnalyzer:getPerHourValue(amount), data.healing))
 				widget.name:setText(data.placeholder)
 
 				if #converted > data.shortLenght then
@@ -228,25 +287,27 @@ function MiscAnalyzer:updateImbuements(contentsPanel)
 			else
 				widget.name:setText(data.name)
 				widget.total:setText(format_thousand(amount))
-				widget.tooltip:setTooltip(string.format("Your %s has activated %s times\n\nCurrently activating %s times per hour", data.name:lower(), format_thousand(amount), MiscAnalyzer:getPerHourValue(amount)))
+				widget.tooltip:setTooltip(string.format(
+				"Your %s has activated %s times\n\nCurrently activating %s times per hour", data.name:lower(),
+					format_thousand(amount), MiscAnalyzer:getPerHourValue(amount)))
 			end
-			
+
 			widget.tooltip.onClick = function()
 				local overViewPanel = contentsPanel.overviewPanel
 				local currentView = MiscAnalyzer.currentOverView
-				
+
 				if currentView == data.name then
 					overViewPanel:setVisible(not overViewPanel:isVisible())
 				else
 					overViewPanel:setVisible(true)
 				end
-				
+
 				MiscAnalyzer.currentOverView = data.name
 				overViewPanel:recursiveGetChildById('description'):setText(widget.tooltip:getTooltip())
 			end
 
 			widget.toBeRemoved = false
-			table.insert(widgets, { id = id, widget = widget }) 
+			table.insert(widgets, { id = id, widget = widget })
 
 			-- Update overview panel
 			local overViewPanel = contentsPanel.overviewPanel
@@ -300,22 +361,24 @@ function MiscAnalyzer:updateSpecialSkills(contentsPanel)
 			widget.name:setText(data.name)
 
 			widget.total:setText(amount)
-			widget.tooltip:setTooltip(string.format("Your %s has activated %s times\n\nCurrently activating %s times per hour", data.name:lower(), format_thousand(amount), MiscAnalyzer:getPerHourValue(amount)))
-			
+			widget.tooltip:setTooltip(string.format(
+			"Your %s has activated %s times\n\nCurrently activating %s times per hour", data.name:lower(),
+				format_thousand(amount), MiscAnalyzer:getPerHourValue(amount)))
+
 			widget.tooltip.onClick = function()
 				local overViewPanel = contentsPanel.overviewPanel
 				local currentView = MiscAnalyzer.currentOverView
-				
+
 				if currentView == data.name then
 					overViewPanel:setVisible(not overViewPanel:isVisible())
 				else
 					overViewPanel:setVisible(true)
 				end
-				
+
 				MiscAnalyzer.currentOverView = data.name
 				overViewPanel:recursiveGetChildById('description'):setText(widget.tooltip:getTooltip())
 			end
-			
+
 			widget.toBeRemoved = false
 			table.insert(widgets, { id = id, widget = widget })
 
@@ -363,8 +426,8 @@ function MiscAnalyzer:onImbuementActivated(imbuementId, amount)
 		local count = MiscAnalyzer.ImbuementData[imbuementId] or 0
 		MiscAnalyzer.ImbuementData[imbuementId] = count + 1
 	end
-  end
-  
+end
+
 function MiscAnalyzer:onSpecialSkillActivated(skillId)
 	if not SpecialSkills[skillId + 1] then
 		return
@@ -438,15 +501,30 @@ function onMiscAnalyzerExtra(mousePosition)
 	local menu = g_ui.createWidget('PopupMenu')
 	menu:setGameMenu(true)
 
-	menu:addOption(tr('Reset Session Data'), function() MiscAnalyzer:resetSessionData() return end)
+	menu:addOption(tr('Reset Session Data'), function()
+		MiscAnalyzer:resetSessionData()
+		return
+	end)
 	menu:addSeparator()
 
-	menu:addOption(tr('Reset Charm Data'), function() MiscAnalyzer:resetCharmData() return end)
-	menu:addOption(tr('Reset Imbuement Data'), function() MiscAnalyzer:resetImbuementData() return end)
-	menu:addOption(tr('Reset Item Upgrade'), function() MiscAnalyzer:resetSpecialData() return end)
+	menu:addOption(tr('Reset Charm Data'), function()
+		MiscAnalyzer:resetCharmData()
+		return
+	end)
+	menu:addOption(tr('Reset Imbuement Data'), function()
+		MiscAnalyzer:resetImbuementData()
+		return
+	end)
+	menu:addOption(tr('Reset Item Upgrade'), function()
+		MiscAnalyzer:resetSpecialData()
+		return
+	end)
 
 	menu:addSeparator()
-	menu:addOption(tr('Copy to Clipboard'), function() MiscAnalyzer:clipboardData() return end)
+	menu:addOption(tr('Copy to Clipboard'), function()
+		MiscAnalyzer:clipboardData()
+		return
+	end)
 	menu:display(mousePosition)
-  return true
+	return true
 end

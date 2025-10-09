@@ -1,33 +1,57 @@
 -- Missing utility functions
 local function formatMoney(value, separator)
-    return comma_value(tostring(value))
+	return comma_value(tostring(value))
+end
+
+-- Enhanced number formatting function with new K, KK suffixes
+local function formatLargeNumber(value)
+	if not value then
+		return "0"
+	end
+
+	-- Ensure we have a number
+	local numValue = tonumber(value)
+	if not numValue or numValue == 0 then
+		return "0"
+	end
+
+	local absValue = math.abs(numValue)
+	local isNegative = numValue < 0
+	local prefix = isNegative and "-" or ""
+
+	if absValue >= 100000000 then
+		-- Values 100,000,000+ use KK notation
+		-- Example: 100,700,000 = 1,007KK, 345,666,000 = 3,456KK
+		local kkValue = math.floor(absValue / 100000)
+		return prefix .. comma_value(tostring(kkValue)) .. "KK"
+	elseif absValue >= 10000000 then
+		-- Values 10,000,000 to 99,999,999 use K notation
+		-- Example: 16,667,000 = 16,667K
+		local kValue = math.floor(absValue / 1000)
+		return prefix .. comma_value(tostring(kValue)) .. "K"
+	else
+		-- Values 1 to 9,999,999 show as is
+		return prefix .. comma_value(tostring(math.floor(absValue)))
+	end
 end
 
 local function tokformat(value)
-    -- Simple number formatting - could be enhanced if needed
-    if value >= 1000000000 then
-        return string.format("%.1fB", value / 1000000000)
-    elseif value >= 1000000 then
-        return string.format("%.1fM", value / 1000000)
-    elseif value >= 1000 then
-        return string.format("%.1fK", value / 1000)
-    else
-        return tostring(value)
-    end
+	-- Legacy function - kept for compatibility, redirects to formatLargeNumber
+	return formatLargeNumber(value)
 end
 
 -- Function to calculate raw XP from modified XP (removing all rate bonuses)
 local function calculateRawXP(modifiedExp)
-    if not modules.game_skills then
-        return modifiedExp  -- Fallback if skills module not available
-    end
-    
-    local totalMultiplier = modules.game_skills.getTotalExpRateMultiplier()
-    if totalMultiplier > 0 then
-        return math.floor(modifiedExp / totalMultiplier)
-    else
-        return modifiedExp
-    end
+	if not modules.game_skills then
+		return modifiedExp -- Fallback if skills module not available
+	end
+
+	local totalMultiplier = modules.game_skills.getTotalExpRateMultiplier()
+	if totalMultiplier > 0 then
+		return math.floor(modifiedExp / totalMultiplier)
+	else
+		return modifiedExp
+	end
 end
 
 if not XPAnalyser then
@@ -52,16 +76,16 @@ end
 local targetMaxMargin = 142
 
 function expForLevel(level)
-  return math.floor((50*level*level*level)/3 - 100*level*level + (850*level)/3 - 200)
+	return math.floor((50 * level * level * level) / 3 - 100 * level * level + (850 * level) / 3 - 200)
 end
 
 function expToAdvance(currentLevel, currentExp)
-  return expForLevel(currentLevel+1) - currentExp
+	return expForLevel(currentLevel + 1) - currentExp
 end
 
 function XPAnalyser.create()
 	XPAnalyser.window = openedWindows['xpButton']
-	
+
 	if not XPAnalyser.window then
 		return
 	end
@@ -71,7 +95,7 @@ function XPAnalyser.create()
 	if toggleFilterButton then
 		toggleFilterButton:setVisible(false)
 	end
-	
+
 	local newWindowButton = XPAnalyser.window:recursiveGetChildById('newWindowButton')
 	if newWindowButton then
 		newWindowButton:setVisible(false)
@@ -80,15 +104,15 @@ function XPAnalyser.create()
 	-- Position contextMenuButton where toggleFilterButton was (to the left of minimize button)
 	local contextMenuButton = XPAnalyser.window:recursiveGetChildById('contextMenuButton')
 	local minimizeButton = XPAnalyser.window:recursiveGetChildById('minimizeButton')
-	
+
 	if contextMenuButton and minimizeButton then
 		contextMenuButton:setVisible(true)
 		contextMenuButton:breakAnchors()
 		contextMenuButton:addAnchor(AnchorTop, minimizeButton:getId(), AnchorTop)
 		contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
-		contextMenuButton:setMarginRight(7)  -- Same margin as toggleFilterButton had
+		contextMenuButton:setMarginRight(7) -- Same margin as toggleFilterButton had
 		contextMenuButton:setMarginTop(0)
-		
+
 		-- Set up contextMenuButton click handler to show our menu
 		contextMenuButton.onClick = function(widget, mousePos)
 			local pos = mousePos or g_window.getMousePosition()
@@ -98,13 +122,13 @@ function XPAnalyser.create()
 
 	-- Position lockButton to the left of contextMenuButton
 	local lockButton = XPAnalyser.window:recursiveGetChildById('lockButton')
-	
+
 	if lockButton and contextMenuButton then
 		lockButton:setVisible(true)
 		lockButton:breakAnchors()
 		lockButton:addAnchor(AnchorTop, contextMenuButton:getId(), AnchorTop)
 		lockButton:addAnchor(AnchorRight, contextMenuButton:getId(), AnchorLeft)
-		lockButton:setMarginRight(2)  -- Same margin as in miniwindow style
+		lockButton:setMarginRight(2) -- Same margin as in miniwindow style
 		lockButton:setMarginTop(0)
 	end
 
@@ -133,14 +157,14 @@ function XPAnalyser:reset(allTimeDps, allTimeHps)
 	XPAnalyser.target = 0
 
 	XPAnalyser.window.contentsPanel.graphPanel:clear()
-	
+
 	-- Initialize graph if it doesn't exist
 	if XPAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
 		XPAnalyser.window.contentsPanel.graphPanel:createGraph()
 		XPAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
 		XPAnalyser.window.contentsPanel.graphPanel:setLineColor(1, TextColors.red) --"#f55e5e"
 	end
-	
+
 	XPAnalyser.window.contentsPanel.graphPanel:addValue(1, 0)
 
 	XPAnalyser:updateWindow()
@@ -151,10 +175,10 @@ function XPAnalyser:updateWindow(ignoreVisible)
 	if not XPAnalyser.window then
 		return
 	end
-	
+
 	-- Always update calculations
 	XPAnalyser:updateCalculations()
-	
+
 	-- Always update ALL UI elements (labels AND graphs) when XP is gained
 	-- This ensures real-time updates regardless of window visibility
 	XPAnalyser:updateBasicUI()
@@ -165,7 +189,7 @@ function XPAnalyser:setupStartExp(value)
 	if XPAnalyser.startExp == 0 then
 		XPAnalyser.launchTime = g_clock.millis()
 		XPAnalyser.startExp = value
-		XPAnalyser.lastExp = value  -- Initialize for XP gain tracking
+		XPAnalyser.lastExp = value -- Initialize for XP gain tracking
 	end
 end
 
@@ -195,7 +219,7 @@ end
 function XPAnalyser:checkExpHour()
 	-- Called by Controller timer every 1000ms
 	-- This provides periodic updates to keep the analyzer current
-	
+
 	-- Always update everything - both labels and graphs
 	if XPAnalyser.window then
 		XPAnalyser:updateCalculations()
@@ -208,16 +232,16 @@ function XPAnalyser:updateBasicUI()
 	if not XPAnalyser.window then
 		return
 	end
-	
+
 	local contentsPanel = XPAnalyser.window.contentsPanel
-	
+
 	-- Update main XP gain displays (always update these)
 	local experience = XPAnalyser.xpGain
 	contentsPanel.xpGain:setText(formatMoney(experience, ","))
 
 	local rawExperience = XPAnalyser.rawXPGain
 	contentsPanel.rawXpGain:setText(formatMoney(rawExperience, ","))
-	
+
 	-- Update XP/hour displays
 	if XPAnalyser.xpGain == 0 then
 		contentsPanel.xpHour:setText(0)
@@ -236,32 +260,27 @@ function XPAnalyser:updateExpensiveUI()
 	if not XPAnalyser.window then
 		return
 	end
-	
+
 	local player = g_game.getLocalPlayer()
 	if not player then
 		return
 	end
-	
+
 	local contentsPanel = XPAnalyser.window.contentsPanel
 
 	-- Update level progress
-	local nextLevelExp = modules.game_skills.expForLevel(player:getLevel()+1)
+	local nextLevelExp = modules.game_skills.expForLevel(player:getLevel() + 1)
 	local hoursLeft = 0
 	local minutesLeft = 0
 	if XPAnalyser.xpHour > 0 then
 		hoursLeft = (nextLevelExp - player:getExperience()) / XPAnalyser.xpHour
-		minutesLeft = math.floor((hoursLeft - math.floor(hoursLeft))*60)
+		minutesLeft = math.floor((hoursLeft - math.floor(hoursLeft)) * 60)
 		hoursLeft = math.floor(hoursLeft)
 	end
 	XPAnalyser:updateNextLevel(hoursLeft, minutesLeft)
 
 	-- Update graph (expensive operation)
-	if XPAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
-		XPAnalyser.window.contentsPanel.graphPanel:createGraph()
-		XPAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
-		XPAnalyser.window.contentsPanel.graphPanel:setLineColor(1, TextColors.red) --"#f55e5e"
-	end
-	XPAnalyser.window.contentsPanel.graphPanel:addValue(1, math.max(0,XPAnalyser.xpHour))
+	XPAnalyser:updateGraph()
 
 	-- Update level percentage
 	if player then
@@ -285,11 +304,49 @@ function XPAnalyser:updateExpensiveUI()
 	XPAnalyser:updateTooltip()
 end
 
+function XPAnalyser:updateGraph()
+	if not XPAnalyser.window or not XPAnalyser.window.contentsPanel or not XPAnalyser.window.contentsPanel.graphPanel then
+		return
+	end
+
+	-- Ensure graph exists before adding value
+	if XPAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
+		XPAnalyser.window.contentsPanel.graphPanel:createGraph()
+		XPAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
+		XPAnalyser.window.contentsPanel.graphPanel:setLineColor(1, TextColors.red)
+	end
+	XPAnalyser.window.contentsPanel.graphPanel:addValue(1, math.max(0, XPAnalyser.xpHour))
+end
+
+function XPAnalyser:updateGraphics()
+	-- Update xpHour calculations first using same pattern as other analyzers
+	local _duration = math.floor((g_clock.millis() - XPAnalyser.launchTime) / 1000)
+
+	if _duration > 0 then
+		XPAnalyser.xpHour = math.floor((XPAnalyser.xpGain * 3600) / _duration)
+		XPAnalyser.rawXpHour = math.floor((XPAnalyser.rawXPGain * 3600) / _duration)
+	else
+		XPAnalyser.xpHour = 0
+		XPAnalyser.rawXpHour = 0
+	end
+
+	if XPAnalyser.xpGain == 0 then
+		XPAnalyser.xpHour = 0
+	end
+
+	if XPAnalyser.rawXPGain == 0 then
+		XPAnalyser.rawXpHour = 0
+	end
+
+	-- Use the new graph update method
+	XPAnalyser:updateGraph()
+end
+
 function XPAnalyser:forceUpdateUI()
 	if not XPAnalyser.window then
 		return
 	end
-	
+
 	-- Force update all calculations and UI elements regardless of visibility
 	XPAnalyser:updateCalculations()
 	XPAnalyser:updateBasicUI()
@@ -303,8 +360,8 @@ function XPAnalyser:updateCalculations()
 	end
 
 	-- Calculate exp per hour
-	local _duration = math.floor((g_clock.millis() - XPAnalyser.launchTime)/1000)
-	
+	local _duration = math.floor((g_clock.millis() - XPAnalyser.launchTime) / 1000)
+
 	if _duration > 0 then
 		XPAnalyser.xpHour = math.floor((XPAnalyser.xpGain * 3600) / _duration)
 		XPAnalyser.rawXpHour = math.floor((XPAnalyser.rawXPGain * 3600) / _duration)
@@ -340,15 +397,17 @@ function XPAnalyser:updateNextLevel(hours, minutes)
 end
 
 -- updaters
-function XPAnalyser:addRawXPGain(value) 
+function XPAnalyser:addRawXPGain(value)
 	-- Calculate the actual raw XP by removing rate modifiers
 	local actualRawXP = calculateRawXP(value)
 	XPAnalyser.rawXPGain = XPAnalyser.rawXPGain + actualRawXP
+	XPAnalyser:updateGraphics()
 	XPAnalyser:updateWindow()
 end
 
-function XPAnalyser:addXpGain(value) 
+function XPAnalyser:addXpGain(value)
 	XPAnalyser.xpGain = XPAnalyser.xpGain + value
+	XPAnalyser:updateGraphics()
 	XPAnalyser:updateWindow()
 end
 
@@ -362,33 +421,39 @@ function XPAnalyser:updateTooltip()
 	text = text .. "\nCurrent Raw XP Per Hour: " .. formatMoney(XPAnalyser.rawXpHour, ",")
 	text = text .. "\nCurrent XP Per Hour: " .. formatMoney(XPAnalyser.xpHour, ",")
 	text = text .. "\nTarget XP Per Hour: " .. formatMoney(XPAnalyser.target, ",")
-	text = text .. "\n" .. formatMoney(expToAdvance(player:getLevel(), player:getExperience()), ",") .. " XP until next level."
+	text = text ..
+	"\n" .. formatMoney(expToAdvance(player:getLevel(), player:getExperience()), ",") .. " XP until next level."
 	text = text .. "\nYou have " .. 100 - player:getLevelPercent() .. " percent to go."
 
 	XPAnalyser.window:setTooltip(text)
 end
 
 function onXPExtra(mousePosition)
-  if cancelNextRelease then
-    cancelNextRelease = false
-    return false
-  end
+	if cancelNextRelease then
+		cancelNextRelease = false
+		return false
+	end
 
-  local rawXpVisible = XPAnalyser.window.contentsPanel.rawXpLabel:isVisible()
-  local gaugeVisible = XPAnalyser.window.contentsPanel.xpBG:isVisible()
-  local graphVisible = XPAnalyser.window.contentsPanel.xpGraphBG:isVisible()
+	local rawXpVisible = XPAnalyser.window.contentsPanel.rawXpLabel:isVisible()
+	local gaugeVisible = XPAnalyser.window.contentsPanel.xpBG:isVisible()
+	local graphVisible = XPAnalyser.window.contentsPanel.xpGraphBG:isVisible()
 
 	local menu = g_ui.createWidget('PopupMenu')
 	menu:setGameMenu(true)
-	menu:addOption(tr('Reset Data'), function() XPAnalyser:reset(); return end)
+	menu:addOption(tr('Reset Data'), function()
+		XPAnalyser:reset(); return
+	end)
 	menu:addSeparator()
 	menu:addCheckBox(tr('Show Raw XP'), rawXpVisible, function() XPAnalyser:setRawXPVisible(not rawXpVisible) end)
 	menu:addSeparator()
-	menu:addOption(tr('Set XP Per Hour Target'), function() XPAnalyser:openTargetConfig() return end)
+	menu:addOption(tr('Set XP Per Hour Target'), function()
+		XPAnalyser:openTargetConfig()
+		return
+	end)
 	menu:addCheckBox(tr('XP Per Hour Gauge'), gaugeVisible, function() XPAnalyser:setGaugeVisible(not gaugeVisible) end)
 	menu:addCheckBox(tr('XP Per Hour Graph'), graphVisible, function() XPAnalyser:setGraphVisible(not graphVisible) end)
 	menu:display(mousePosition)
-  return true
+	return true
 end
 
 function XPAnalyser:checkAnchos()
@@ -429,13 +494,13 @@ function XPAnalyser:setRawXPVisible(value)
 
 	XPAnalyser.rawXpVisible = value
 	XPAnalyser:checkAnchos()
-	
+
 	-- Adjust window maximum height based on raw XP visibility
 	if value then
-		XPAnalyser.window:setContentMaximumHeight(255)  -- Show Raw XP active (taller)
+		XPAnalyser.window:setContentMaximumHeight(255) -- Show Raw XP active (taller)
 		XPAnalyser.window:setHeight(255)
 	else
-		XPAnalyser.window:setContentMaximumHeight(225)  -- Show Raw XP inactive (shorter)
+		XPAnalyser.window:setContentMaximumHeight(225) -- Show Raw XP inactive (shorter)
 		XPAnalyser.window:setHeight(225)
 	end
 end
@@ -483,12 +548,15 @@ end
 function XPAnalyser:gaugeIsVisible()
 	return XPAnalyser.gaugeVisible
 end
+
 function XPAnalyser:graphIsVisible()
 	return XPAnalyser.graphVisible
 end
+
 function XPAnalyser:rawXPIsVisible()
 	return XPAnalyser.rawXpVisible
 end
+
 function XPAnalyser:getTarget()
 	return XPAnalyser.target
 end
@@ -532,12 +600,12 @@ function XPAnalyser:saveConfigJson()
 
 	local player = g_game.getLocalPlayer()
 	if not player then return end
-	
+
 	-- Ensure the characterdata directory exists
 	local characterDir = "/characterdata/" .. player:getId()
 	pcall(function() g_resources.makeDir("/characterdata") end)
 	pcall(function() g_resources.makeDir(characterDir) end)
-	
+
 	local file = "/characterdata/" .. player:getId() .. "/xpanalyser.json"
 	local status, result = pcall(function() return json.encode(config, 2) end)
 	if not status then
@@ -547,12 +615,12 @@ function XPAnalyser:saveConfigJson()
 	if result:len() > 100 * 1024 * 1024 then
 		return g_logger.error("Something went wrong, file is above 100MB, won't be saved")
 	end
-	
+
 	-- Safely attempt to write the file, ignoring errors during logout
 	local writeStatus, writeError = pcall(function()
 		return g_resources.writeFileContents(file, result)
 	end)
-	
+
 	if not writeStatus then
 		-- Log the error but don't spam the console during normal logout
 		g_logger.debug("Could not save XPAnalyser config during logout: " .. tostring(writeError))

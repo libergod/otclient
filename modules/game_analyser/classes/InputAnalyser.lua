@@ -1,18 +1,61 @@
 -- Missing utility functions
 local function formatMoney(value, separator)
-    return comma_value(tostring(value))
+	return comma_value(tostring(value))
+end
+
+-- Enhanced number formatting function with new K, KK suffixes
+local function formatLargeNumber(value)
+	if not value then
+		return "0"
+	end
+
+	-- Ensure we have a number
+	local numValue = tonumber(value)
+	if not numValue or numValue == 0 then
+		return "0"
+	end
+
+	local absValue = math.abs(numValue)
+	local isNegative = numValue < 0
+	local prefix = isNegative and "-" or ""
+
+	if absValue >= 100000000 then
+		-- Values 100,000,000+ use KK notation
+		-- Example: 100,700,000 = 1,007KK, 345,666,000 = 3,456KK
+		local kkValue = math.floor(absValue / 100000)
+		return prefix .. comma_value(tostring(kkValue)) .. "KK"
+	elseif absValue >= 10000000 then
+		-- Values 10,000,000 to 99,999,999 use K notation
+		-- Example: 16,667,000 = 16,667K
+		local kValue = math.floor(absValue / 1000)
+		return prefix .. comma_value(tostring(kValue)) .. "K"
+	else
+		-- Values 1 to 9,999,999 show as is
+		return prefix .. comma_value(tostring(math.floor(absValue)))
+	end
 end
 
 -- Add capitalize function to string library if it doesn't exist
 if not string.capitalize then
-    function string.capitalize(str)
-        if not str or str == "" then
-            return str
-        end
-        return str:gsub("(%l)(%w*)", function(first, rest)
-            return first:upper() .. rest
-        end)
-    end
+	function string.capitalize(str)
+		if not str or str == "" then
+			return str
+		end
+		return str:gsub("(%l)(%w*)", function(first, rest)
+			return first:upper() .. rest
+		end)
+	end
+end
+
+-- Function to truncate text to a maximum length
+local function short_text(text, maxLength)
+	if not text then
+		return ""
+	end
+	if string.len(text) > maxLength then
+		return text:sub(1, maxLength - 3) .. "..."
+	end
+	return text
 end
 
 if not InputAnalyser then
@@ -38,7 +81,7 @@ if not InputAnalyser then
 	InputAnalyser.__index = InputAnalyser
 end
 
-local imageDir = '/images/game/cyclopedia/icons/monster-icon-%s-resist'
+local imageDir = '/game_cyclopedia/images/bestiary/icons/monster-icon-%s-resist'
 
 local effectsFiles = {
 	[0] = 'physical',
@@ -68,6 +111,12 @@ local obj = {
 	damageTicks = {},
 	damageEffect = {},
 
+	-- Session data storage for 60 minutes
+	sessionDamageTicks = {},
+	sessionMode = false,
+	sessionMinuteData = {}, -- Array to store DPS data per minute for the graph
+	lastMinuteUpdate = 0, -- Track when we last updated minute data
+
 	graphVisible = true,
 	typesVisible = true,
 	sourceVisible = true,
@@ -79,34 +128,67 @@ local obj = {
 }
 
 local valueInSeconds = function(t)
-    local d = 0
-    local time = 0
-    local now = g_clock.millis()
-    if #t > 0 then
+	local d = 0
+	local time = 0
+	local now = g_clock.millis()
+	if #t > 0 then
 		local itemsToBeRemoved = 0
-        for i, v in ipairs(t) do
-            if now - v.tick <= 3000 then
-                if time == 0 then
-                    time = v.tick
-                end
-                d = d + v.amount
-            else
+		for i, v in ipairs(t) do
+			if now - v.tick <= 3000 then
+				if time == 0 then
+					time = v.tick
+				end
+				d = d + v.amount
+			else
 				itemsToBeRemoved = itemsToBeRemoved + 1
-            end
-        end
+			end
+		end
 
 		-- items are added in order, so we can safely
 		-- remove only the first items
 		for i = 1, itemsToBeRemoved do
 			table.remove(t, 1)
 		end
-    end
-    return math.ceil(d/((now-time)/1000))
+	end
+	return math.ceil(d / ((now - time) / 1000))
+end
+
+-- Function to handle session data for 60 minutes
+local valueInSessionMode = function(t)
+	local d = 0
+	local time = 0
+	local now = g_clock.millis()
+	local sessionDuration = 60 * 60 * 1000 -- 60 minutes in milliseconds
+
+	if #t > 0 then
+		local itemsToBeRemoved = 0
+		for i, v in ipairs(t) do
+			if now - v.tick <= sessionDuration then
+				if time == 0 then
+					time = v.tick
+				end
+				d = d + v.amount
+			else
+				itemsToBeRemoved = itemsToBeRemoved + 1
+			end
+		end
+
+		-- Remove expired items
+		for i = 1, itemsToBeRemoved do
+			table.remove(t, 1)
+		end
+	end
+
+	if time > 0 then
+		return math.ceil(d / ((now - time) / 1000))
+	else
+		return 0
+	end
 end
 
 function InputAnalyser:create()
 	InputAnalyser.window = openedWindows['damageButton']
-	
+
 	if not InputAnalyser.window then
 		return
 	end
@@ -116,7 +198,7 @@ function InputAnalyser:create()
 	if toggleFilterButton then
 		toggleFilterButton:setVisible(false)
 	end
-	
+
 	local newWindowButton = InputAnalyser.window:recursiveGetChildById('newWindowButton')
 	if newWindowButton then
 		newWindowButton:setVisible(false)
@@ -125,30 +207,36 @@ function InputAnalyser:create()
 	-- Position contextMenuButton where toggleFilterButton was (to the left of minimize button)
 	local contextMenuButton = InputAnalyser.window:recursiveGetChildById('contextMenuButton')
 	local minimizeButton = InputAnalyser.window:recursiveGetChildById('minimizeButton')
-	
+
 	if contextMenuButton and minimizeButton then
 		contextMenuButton:setVisible(true)
 		contextMenuButton:breakAnchors()
 		contextMenuButton:addAnchor(AnchorTop, minimizeButton:getId(), AnchorTop)
 		contextMenuButton:addAnchor(AnchorRight, minimizeButton:getId(), AnchorLeft)
-		contextMenuButton:setMarginRight(7)  -- Same margin as toggleFilterButton had
+		contextMenuButton:setMarginRight(7) -- Same margin as toggleFilterButton had
 		contextMenuButton:setMarginTop(0)
+
+		-- Set up the click handler for the context menu
+		contextMenuButton.onClick = function(widget, mousePosition)
+			return onInputExtra(mousePosition)
+		end
 	end
 
 	-- Position lockButton to the left of contextMenuButton
 	local lockButton = InputAnalyser.window:recursiveGetChildById('lockButton')
-	
+
 	if lockButton and contextMenuButton then
 		lockButton:setVisible(true)
 		lockButton:breakAnchors()
 		lockButton:addAnchor(AnchorTop, contextMenuButton:getId(), AnchorTop)
 		lockButton:addAnchor(AnchorRight, contextMenuButton:getId(), AnchorLeft)
-		lockButton:setMarginRight(2)  -- Same margin as in miniwindow style
+		lockButton:setMarginRight(2) -- Same margin as in miniwindow style
 		lockButton:setMarginTop(0)
 	end
 
 	InputAnalyser.launchTime = g_clock.millis()
 	InputAnalyser.session = 0
+	InputAnalyser.lastMinuteUpdate = g_clock.millis() -- Initialize minute tracking
 
 	InputAnalyser.total = 0
 	InputAnalyser.maxDPS = 0
@@ -156,6 +244,8 @@ function InputAnalyser:create()
 	InputAnalyser.inputValues = {}
 	InputAnalyser.damageEffect = {}
 	InputAnalyser.damageTicks = {}
+	InputAnalyser.sessionDamageTicks = {}
+	InputAnalyser.sessionMinuteData = {}
 end
 
 function InputAnalyser:reset()
@@ -168,16 +258,19 @@ function InputAnalyser:reset()
 	InputAnalyser.inputValues = {}
 	InputAnalyser.damageEffect = {}
 	InputAnalyser.damageTicks = {}
+	InputAnalyser.sessionDamageTicks = {}
+	InputAnalyser.sessionMinuteData = {}
+	InputAnalyser.lastMinuteUpdate = g_clock.millis()
 
 	InputAnalyser.window.contentsPanel.graphPanel:clear()
-	
+
 	-- Initialize graph if it doesn't exist
 	if InputAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
 		InputAnalyser.window.contentsPanel.graphPanel:createGraph()
 		InputAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
-		InputAnalyser.window.contentsPanel.graphPanel:setLineColor(1, "#f36500")
+		InputAnalyser.window.contentsPanel.graphPanel:setLineColor(1, "#f75f5f")
 	end
-	
+
 	InputAnalyser.window.contentsPanel.graphPanel:addValue(1, 0)
 
 	InputAnalyser:toggleDamageSource(false)
@@ -221,15 +314,15 @@ function InputAnalyser:updateWindow(ignoreVisible)
 		if not widget then
 			widget = g_ui.createWidget('DamagePanel', contentsPanel.dmgTypes)
 		end
-	
+
 		local percent = (damage * 100) / InputAnalyser.total
 		widget:setId(effect)
 		widget.icon:setImageSource(string.format(imageDir, effectsFiles[effect]))
 		widget.icon:setTooltip(getCombatName(effect))
 		widget.desc:setText(formatMoney(damage, ",") .. " (" .. string.format("%.1f", percent) .. "%)")
-	
+
 		count = count + 1
-		table.insert(widgets, {widget = widget, percent = percent})
+		table.insert(widgets, { widget = widget, percent = percent })
 	end
 
 	table.sort(widgets, function(a, b)
@@ -264,7 +357,7 @@ function InputAnalyser:updateWindow(ignoreVisible)
 
 		count = count + 1
 		widget:setId(monsterName)
-		widget.name:setText(short_text(string.capitalize(monsterName), 11))
+		widget.name:setText(short_text(string.capitalize(monsterName), 15))
 		widget:setTooltip(string.capitalize(monsterName))
 		local percent = (damageMonster * 100) / InputAnalyser.total
 		widget.desc:setText(string.format("%.1f", percent) .. "%")
@@ -278,7 +371,7 @@ function InputAnalyser:updateWindow(ignoreVisible)
 			end
 		end
 
-		table.insert(widgets, {widget = widget, percent = percent})
+		table.insert(widgets, { widget = widget, percent = percent })
 	end
 
 	table.sort(widgets, function(a, b)
@@ -317,7 +410,13 @@ function InputAnalyser:updateWindow(ignoreVisible)
 end
 
 function InputAnalyser:checkDPS()
-	local curDPS = valueInSeconds(InputAnalyser.damageTicks)
+	local curDPS = 0
+	if InputAnalyser.sessionMode then
+		curDPS = valueInSessionMode(InputAnalyser.sessionDamageTicks)
+	else
+		curDPS = valueInSeconds(InputAnalyser.damageTicks)
+	end
+
 	if not curDPS or not tonumber(curDPS) then curDPS = 0 end
 	InputAnalyser.curDPS = curDPS
 	local lastDps = tonumber(InputAnalyser.maxDPS) or 1
@@ -327,16 +426,68 @@ function InputAnalyser:checkDPS()
 	end
 
 	InputAnalyser.window.contentsPanel.maxDps:setText(formatMoney(InputAnalyser.maxDPS, ","))
-	
+
 	-- Ensure graph exists before adding value
 	if InputAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
 		InputAnalyser.window.contentsPanel.graphPanel:createGraph()
 		InputAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
-		InputAnalyser.window.contentsPanel.graphPanel:setLineColor(1, "#f36500")
+		InputAnalyser.window.contentsPanel.graphPanel:setLineColor(1, "#f75f5f")
 	end
-	InputAnalyser.window.contentsPanel.graphPanel:addValue(1, InputAnalyser.curDPS)
+
+	-- Only add current DPS to graph if in normal mode
+	-- Session mode will rebuild the entire graph when switched
+	if not InputAnalyser.sessionMode then
+		InputAnalyser.window.contentsPanel.graphPanel:addValue(1, InputAnalyser.curDPS)
+	end
+
+	-- Update minute data for session tracking
+	InputAnalyser:updateMinuteData()
 end
 
+function InputAnalyser:updateMinuteData()
+	local now = g_clock.millis()
+	local minuteInMs = 60 * 1000
+
+	-- Initialize if first time
+	if InputAnalyser.lastMinuteUpdate == 0 then
+		InputAnalyser.lastMinuteUpdate = now
+		return
+	end
+
+	-- Check if a minute has passed
+	if now - InputAnalyser.lastMinuteUpdate >= minuteInMs then
+		-- Calculate DPS for the past minute using session data
+		local minuteDPS = 0
+		local minuteStart = InputAnalyser.lastMinuteUpdate
+		local totalDamage = 0
+
+		for _, tick in ipairs(InputAnalyser.sessionDamageTicks) do
+			if tick.tick >= minuteStart and tick.tick < now then
+				totalDamage = totalDamage + tick.amount
+			end
+		end
+
+		minuteDPS = totalDamage / 60 -- Damage per second for that minute
+
+		-- Add to minute data array
+		table.insert(InputAnalyser.sessionMinuteData, {
+			timestamp = now,
+			dps = minuteDPS
+		})
+
+		-- Keep only last 60 minutes of data
+		while #InputAnalyser.sessionMinuteData > 60 do
+			table.remove(InputAnalyser.sessionMinuteData, 1)
+		end
+
+		-- Update the graph if we're in session mode
+		if InputAnalyser.sessionMode then
+			InputAnalyser.window.contentsPanel.graphPanel:addValue(1, minuteDPS)
+		end
+
+		InputAnalyser.lastMinuteUpdate = now
+	end
+end
 
 function InputAnalyser:addInputDamage(amount, effect, target)
 	if not InputAnalyser.inputValues[target] then
@@ -349,7 +500,9 @@ function InputAnalyser:addInputDamage(amount, effect, target)
 	InputAnalyser.inputValues[target][effect] = InputAnalyser.inputValues[target][effect] + amount
 	InputAnalyser.total = InputAnalyser.total + amount
 
-	InputAnalyser.damageTicks[#InputAnalyser.damageTicks + 1] = {amount = amount, tick = g_clock.millis()}
+	local currentTime = g_clock.millis()
+	InputAnalyser.damageTicks[#InputAnalyser.damageTicks + 1] = { amount = amount, tick = currentTime }
+	InputAnalyser.sessionDamageTicks[#InputAnalyser.sessionDamageTicks + 1] = { amount = amount, tick = currentTime }
 
 	if not InputAnalyser.damageEffect[effect] then
 		InputAnalyser.damageEffect[effect] = 0
@@ -383,18 +536,28 @@ function InputAnalyser:toggleDamageSource(bool)
 end
 
 function onInputExtra(mousePosition)
-  if cancelNextRelease then
-    cancelNextRelease = false
-    return false
-  end
+	if cancelNextRelease then
+		cancelNextRelease = false
+		return false
+	end
 
-  local graphVisible = InputAnalyser.window.contentsPanel.dpsGraphBG:isVisible()
-  local typesVisible = InputAnalyser.window.contentsPanel.damageTypeLabel:isVisible()
-  local sourceVisible = InputAnalyser.window.contentsPanel.damageSource:isVisible()
+	local graphVisible = InputAnalyser.window.contentsPanel.dpsGraphBG:isVisible()
+	local typesVisible = InputAnalyser.window.contentsPanel.damageTypeLabel:isVisible()
+	local sourceVisible = InputAnalyser.window.contentsPanel.damageSource:isVisible()
 
 	local menu = g_ui.createWidget('PopupMenu')
 	menu:setGameMenu(true)
-	menu:addOption(tr('Reset Data'), function() InputAnalyser:reset() return end)
+	menu:addOption(tr('Reset Data'), function()
+		InputAnalyser:reset()
+		return
+	end)
+
+	-- Toggle between "Show Session Values" and "Show Current Values" based on current mode
+	local sessionOptionText = InputAnalyser.sessionMode and tr('Show Current Values') or tr('Show Session Values')
+	menu:addOption(sessionOptionText, function()
+		InputAnalyser:toggleSessionMode()
+	end)
+
 	menu:addSeparator()
 	menu:addCheckBox(tr('Show Damage Graph'), graphVisible, function()
 		InputAnalyser:setDamageGraph(not graphVisible, true)
@@ -406,9 +569,12 @@ function onInputExtra(mousePosition)
 		InputAnalyser:setDamageSource(not sourceVisible, true)
 	end)
 	menu:addSeparator()
-	menu:addOption(tr('Copy to Clipboard'), function() InputAnalyser:clipboardData() return end)
+	menu:addOption(tr('Copy to Clipboard'), function()
+		InputAnalyser:clipboardData()
+		return
+	end)
 	menu:display(mousePosition)
-  return true
+	return true
 end
 
 function InputAnalyser:checkAnchos()
@@ -452,7 +618,6 @@ function InputAnalyser:setDamageTypes(value, check)
 	end
 end
 
-
 function InputAnalyser:setDamageSource(value, check)
 	InputAnalyser.window.contentsPanel.damageSource:setVisible(value)
 	InputAnalyser.window.contentsPanel.dmgSrc:setVisible(value)
@@ -466,8 +631,46 @@ function InputAnalyser:setDamageSource(value, check)
 	end
 end
 
-function InputAnalyser:clipboardData()
+function InputAnalyser:toggleSessionMode()
+	InputAnalyser.sessionMode = not InputAnalyser.sessionMode
 
+	local horizontalGraph = InputAnalyser.window.contentsPanel.horizontalGraph
+
+	if InputAnalyser.sessionMode then
+		-- Switch to session mode: change image and show minute-by-minute data
+		horizontalGraph:setImageSource('/images/game/analyzer/graphHorizontal')
+
+		-- Clear and rebuild graph with session data
+		InputAnalyser.window.contentsPanel.graphPanel:clear()
+		if InputAnalyser.window.contentsPanel.graphPanel:getGraphsCount() == 0 then
+			InputAnalyser.window.contentsPanel.graphPanel:createGraph()
+			InputAnalyser.window.contentsPanel.graphPanel:setLineWidth(1, 1)
+			InputAnalyser.window.contentsPanel.graphPanel:setLineColor(1, "#f75f5f")
+		end
+
+		InputAnalyser.window.contentsPanel.graphPanel:setCapacity(3600) -- 60 minutes worth of data points
+
+		-- Add all historical minute data to graph
+		for _, minuteData in ipairs(InputAnalyser.sessionMinuteData) do
+			InputAnalyser.window.contentsPanel.graphPanel:addValue(1, minuteData.dps)
+		end
+
+		-- If no session data exists yet, add current DPS to start the graph properly
+		if #InputAnalyser.sessionMinuteData == 0 then
+			local currentDPS = valueInSeconds(InputAnalyser.damageTicks) or 0
+			InputAnalyser.window.contentsPanel.graphPanel:addValue(1, currentDPS)
+		end
+	else
+		-- Switch back to normal mode: restore original image and continue with existing graph
+		horizontalGraph:setImageSource('/images/game/analyzer/graphDpsHorizontal')
+		InputAnalyser.window.contentsPanel.graphPanel:setCapacity(400) -- Default capacity
+
+		-- Don't clear the graph - let it continue from where it was before session mode
+		-- The checkDPS() function will continue adding values automatically
+	end
+end
+
+function InputAnalyser:clipboardData()
 	local text = "Received Damage"
 	text = text .. "\nTotal: " .. formatMoney(InputAnalyser.total, ",")
 	text = text .. "\nMax-DPS: " .. formatMoney(InputAnalyser.maxDPS, ",")
@@ -478,7 +681,9 @@ function InputAnalyser:clipboardData()
 		local count = 1
 		for effect, damage in pairs(InputAnalyser.damageEffect) do
 			local percent = (damage * 100) / InputAnalyser.total
-			text = text .. "\n\t" .. getCombatName(effect) .. " " .. formatMoney(damage, ",") .. " (".. string.format("%.1f", percent) .."%)"
+			text = text ..
+			"\n\t" ..
+			getCombatName(effect) .. " " .. formatMoney(damage, ",") .. " (" .. string.format("%.1f", percent) .. "%)"
 		end
 	end
 	text = text .. "\nDamage Sources"
@@ -492,21 +697,28 @@ function InputAnalyser:clipboardData()
 			end
 
 			local percent = (damageMonster * 100) / InputAnalyser.total
-			text = text .. "\n\t" .. string.capitalize(monsterName) .. " " .. formatMoney(damageMonster, ",") .. " (" .. string.format("%.1f", percent) .. "%)"
+			text = text ..
+			"\n\t" ..
+			string.capitalize(monsterName) ..
+			" " .. formatMoney(damageMonster, ",") .. " (" .. string.format("%.1f", percent) .. "%)"
 		end
 	end
 	if InputAnalyser.inputValues[InputAnalyser.monsterName] and InputAnalyser.window.contentsPanel.separatorDmgSrc:isVisible() then
 		text = text .. "\n" .. string.capitalize(InputAnalyser.monsterName)
 		for effect, damage in pairs(InputAnalyser.inputValues[InputAnalyser.monsterName]) do
 			local percent = (damage * 100) / InputAnalyser.total
-			text = text .. "\n\t" .. getCombatName(effect) .. " " .. formatMoney(damage, ",") .. " (".. string.format("%.1f", percent) .."%)"
+			text = text ..
+			"\n\t" ..
+			getCombatName(effect) .. " " .. formatMoney(damage, ",") .. " (" .. string.format("%.1f", percent) .. "%)"
 		end
 	end
 	g_window.setClipboardText(text)
 end
 
 function InputAnalyser:damageGraphIsVisible() return InputAnalyser.graphVisible end
+
 function InputAnalyser:damageTypesIsVisible() return InputAnalyser.typesVisible end
+
 function InputAnalyser:damageSourceIsVisible() return InputAnalyser.sourceVisible end
 
 function InputAnalyser:loadConfigJson()
@@ -535,23 +747,29 @@ function InputAnalyser:loadConfigJson()
 	InputAnalyser:setDamageSource(config.showDamageSources, false)
 	InputAnalyser:setDamageTypes(config.showDamageTypes, false)
 
+	-- Load session mode state
+	if config.showSessionValues then
+		InputAnalyser.sessionMode = false -- Start false so toggle works correctly
+		InputAnalyser:toggleSessionMode()
+	end
+
 	InputAnalyser:checkAnchos()
 end
 
 function InputAnalyser:saveConfigJson()
 	local player = g_game.getLocalPlayer()
 	if not player then return end
-	
+
 	-- Ensure the characterdata directory exists
 	local characterDir = "/characterdata/" .. player:getId()
 	pcall(function() g_resources.makeDir("/characterdata") end)
 	pcall(function() g_resources.makeDir(characterDir) end)
-	
+
 	local config = {
 		showDamageGraph = InputAnalyser:damageGraphIsVisible(),
 		showDamageSources = InputAnalyser:damageSourceIsVisible(),
 		showDamageTypes = InputAnalyser:damageTypesIsVisible(),
-		showSessionValues = false,
+		showSessionValues = InputAnalyser.sessionMode,
 	}
 
 	local file = "/characterdata/" .. player:getId() .. "/damageinputanalyser.json"
@@ -563,12 +781,12 @@ function InputAnalyser:saveConfigJson()
 	if result:len() > 100 * 1024 * 1024 then
 		return g_logger.error("Something went wrong, file is above 100MB, won't be saved")
 	end
-	
+
 	-- Safely attempt to write the file, ignoring errors during logout
 	local writeStatus, writeError = pcall(function()
 		return g_resources.writeFileContents(file, result)
 	end)
-	
+
 	if not writeStatus then
 		-- Log the error but don't spam the console during normal logout
 		g_logger.debug("Could not save InputAnalyser config during logout: " .. tostring(writeError))

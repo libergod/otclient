@@ -93,6 +93,7 @@ public:
     void sendPassLeadership(uint32_t creatureId);
     void sendLeaveParty();
     void sendShareExperience(bool active);
+    void sendPartyAnalyzerAction(uint8_t action, const std::vector<std::tuple<uint16_t, uint64_t>>& items = {});
     void sendOpenOwnChannel();
     void sendInviteToOwnChannel(std::string_view name);
     void sendExcludeFromOwnChannel(std::string_view name);
@@ -385,6 +386,8 @@ private:
     bool m_mapKnown{ false };
     bool m_firstRecv{ true };
     bool m_record {false};
+
+    ticks_t m_lastPartyAnalyzerCall{ 0 };
 
     std::string m_accountName;
     std::string m_accountPassword;
