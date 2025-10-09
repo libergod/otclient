@@ -128,6 +128,8 @@ function init()
 
     gameMapPanel.onClick = toggleInternalFocus
     gameRightPanel.onClick = toggleInternalFocus
+    gameRightExtraPanel.onClick = toggleInternalFocus
+    gameLeftExtraPanel.onClick = toggleInternalFocus
     gameLeftPanel.onClick = toggleInternalFocus
     gameBottomPanel.onClick = toggleInternalFocus
 
@@ -1802,4 +1804,6 @@ function toggleFocus(value, reason)
 
     gameRightPanel:setFocusable(value)
     gameLeftPanel:setFocusable(value)
+    gameRightExtraPanel:setFocusable(value)
+    gameLeftExtraPanel:setFocusable(value)
 end
