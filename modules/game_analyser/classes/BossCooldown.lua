@@ -356,9 +356,11 @@ function toggleBossCDFocus(visible)
 	elseif widget then
 		widget:setPhantom(false)
 		widget.onClick = function()
+			modules.game_interface.toggleInternalFocus();
 			toggleBossCDFocus(not visible)
 		end
 	end
+	modules.game_interface.toggleFocus(visible, "bosscooldown")
 
 	if visible then
 		local text = BossCooldown.window.contentsPanel.searchText
