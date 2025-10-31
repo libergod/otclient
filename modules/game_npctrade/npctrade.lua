@@ -23,6 +23,7 @@ capacityLabel = nil
 tradeButton = nil
 buyTab = nil
 sellTab = nil
+headerNpcName = nil
 initialized = false
 
 showWeight = true
@@ -65,6 +66,7 @@ function NPCTRADEController:onInit()
     capacityDesc = npcWindow:querySelector('#capacityDesc')
     capacityLabel = npcWindow:querySelector('#capacity')
     tradeButton = npcWindow:querySelector('#tradeButton')
+    headerNpcName = npcWindow:querySelector('#headerNpcName')
 
     buyWithBackpack = npcWindow:querySelector('#buyWithBackpack')
     ignoreCapacity = npcWindow:querySelector('#ignoreCapacity')
@@ -481,6 +483,11 @@ function onOpenNpcTrade(items)
             newItem.price = item[5]
             table.insert(tradeItems[SELL], newItem)
         end
+    end
+
+    -- Set NPC name in header
+    if headerNpcName then
+        headerNpcName:setText("NPC Trade")
     end
 
     refreshTradeItems()

@@ -1,209 +1,264 @@
 <style>
-  /* Main Window */
-  .npc-window {
-    position: relative;
-    width: 550px;
-    height: 515px;
-  }
+    /* Main Window */
+    .npc-window {
+        position: relative;
+        width: 550px;
+        height: 515px;
+    }
 
-  /* Tab Container */
-  .tab-container {
-    width: 100%;
-    height: 22px;
-    margin-top: 0;
-    display: flex;
-  }
+    /* Header with banner and NPC name */
+    .header-banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200;
+        height: 40;
+        z-index: 10;
+    }
 
-  .tab-container TabButton {
-    flex: 1;
-    height: 100%;
-  }
+    .header-npc-name {
+        position: absolute;
+        top: 5;
+        left: 10;
+        color: #ffffff;
+        font-size: 12;
+        font-weight: bold;
+        text-shadow: 1 1 0 #000000;
+        z-index: 11;
+    }
 
-  .tab-container #buyTab {
-    margin-right: 5px;
-  }
+    /* Close button on top-right */
+    .close-button {
+        position: absolute;
+        top: 6;
+        right: 6;
+        width: 18;
+        height: 18;
+        --image-source: /images/ui/buttons/button-clear-18x18-up.png;
+        z-index: 50;
+    }
 
-  .tab-container #sellTab {
-    margin-left: 5px;
-  }
+    .close-button:hover {
+        --image-source: /images/ui/buttons/button-clear-18x18-down.png;
+    }
 
-  /* Items Panel */
-  .items-panel-wrapper {
-    width: 100%;
-    height: 250px;
-    margin-top: 10px;
-    position: relative;
-  }
+    /* Tab Container */
+    .tab-container {
+        width: 100%;
+        height: 22px;
+        margin-top: 0;
+        display: flex;
+    }
 
-  .items-panel-wrapper #itemsPanel {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
+    .tab-container TabButton {
+        flex: 1;
+        height: 100%;
+    }
 
-  /* Two Column Layout for Setup + Options */
-  .two-column-container {
-    width: 100%;
-    height: 140px;
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-  }
+    .tab-container #buyTab {
+        margin-right: 5px;
+    }
 
-  /* Setup Panel - Left */
-  .setup-panel {
-    flex: 1;
-    height: 140px;
-    padding: 5px;
-  }
+    .tab-container #sellTab {
+        margin-left: 5px;
+    }
 
-  .setup-panel .info-row {
-    width: 100%;
-    margin-top: 5px;
-    margin-bottom: 0;
-    display: block;
-  }
+    /* Items Panel */
+    .items-panel-wrapper {
+        width: 100%;
+        height: 250px;
+        margin-top: 10px;
+        position: relative;
+    }
 
-  .setup-panel .info-label {
-    display: inline-block;
-    width: 85px;
-    margin-left: 5px;
-  }
+    .items-panel-wrapper #itemsPanel {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
 
-  .setup-panel .info-value {
-    display: inline-block;
-    margin-left: 5px;
-  }
+    /* Two Column Layout for Setup + Options */
+    .two-column-container {
+        width: 100%;
+        height: 140px;
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
 
-  .setup-panel #quantityScroll {
-    width: 100%;
-    margin-top: 5px;
-    margin-left: 5px;
-    margin-right: 5px;
-  }
+    /* Setup Panel - Left */
+    .setup-panel {
+        flex: 1;
+        height: 140px;
+        padding: 5px;
+    }
 
-  /* Buy Options Panel - Right */
-  .buy-options {
-    flex: 1;
-    height: 140px;
-    padding: 5px;
-  }
+    .setup-panel .info-row {
+        width: 100%;
+        margin-top: 5px;
+        margin-bottom: 0;
+        display: block;
+    }
 
-  .buy-options .search-row {
-    width: 100%;
-    margin-top: 7px;
-    margin-left: 5px;
-    margin-right: 5px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+    .setup-panel .info-label {
+        display: inline-block;
+        width: 85px;
+        margin-left: 5px;
+    }
 
-  .buy-options #searchLabel {
-    display: inline-block;
-    margin-right: 5px;
-  }
+    .setup-panel .info-value {
+        display: inline-block;
+        margin-left: 5px;
+    }
 
-  .buy-options #searchText {
-    flex: 1 1 auto;
-    min-width: 80px;
-    max-width: 380px;
-    display: block;
-    margin-left: 0;
-  }
+    .setup-panel #quantityScroll {
+        width: 100%;
+        margin-top: 5px;
+        margin-left: 5px;
+        margin-right: 5px;
+    }
 
-  .buy-options .checkbox-item {
-    display: block;
-    margin-top: 5px;
-    margin-left: 5px;
-  }
+    /* Buy Options Panel - Right */
+    .buy-options {
+        flex: 1;
+        height: 140px;
+        padding: 5px;
+    }
 
-  /* Buttons Panel */
-  .buttons-panel {
-    width: 100%;
-    height: 30px;
-    margin-top: 10px;
-    text-align: right;
-  }
+    .buy-options .search-row {
+        width: 100%;
+        margin-top: 7px;
+        margin-left: 5px;
+        margin-right: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
 
-  .buttons-panel Button {
-    width: 64px;
-    height: 20px;
-    display: inline-block;
-    margin-left: 10px;
-  }
+    .buy-options #searchLabel {
+        display: inline-block;
+        margin-right: 5px;
+    }
 
-  .buttons-panel #sellAllButton {
-    float: left;
-    margin-left: 0;
-  }
+    .buy-options #searchText {
+        flex: 1 1 auto;
+        min-width: 80px;
+        max-width: 380px;
+        display: block;
+        margin-left: 0;
+    }
+
+    .buy-options .checkbox-item {
+        display: block;
+        margin-top: 5px;
+        margin-left: 5px;
+    }
+
+    /* Buttons Panel */
+    .buttons-panel {
+        width: 100%;
+        height: 30px;
+        margin-top: 10px;
+        text-align: right;
+    }
+
+    .buttons-panel Button {
+        width: 64px;
+        height: 20px;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    .buttons-panel #sellAllButton {
+        float: left;
+        margin-left: 0;
+    }
+
+    .miniwindow-title {
+        margin-top: 2px;
+        margin-left: 20px;
+        margin-right: 50px;
+        color: #9d9d9d;
+    }
 </style>
 
 <html>
 
-<!-- Inner content hidden to start a clean slate for the enhanced window -->
+<!-- Use MainWindow (original) and provide top header banner and close button -->
 <MainWindow id="main" placement="center" class="npc-window" title="NPC Trade" onescape="self:closeNpcTrade()">
-  <div id="npc_inner_content" style="display: none;">
 
-    <!-- Tab Buttons (hidden) -->
-    <div class="tab-container" placement="top-left">
-      <TabButton id="buyTab" text="Buy" tooltip="List of items that you're able to buy" checked="true" />
-      <TabButton id="sellTab" text="Sell" tooltip="List of items that you're able to sell" />
+    <!-- Header banner with NPC name overlay -->
+    <img class="header-banner" src="/images/ui/npctrade/blue-golden-flag-banner.png" />
+    <label id="headerNpcName" class="header-npc-name">NPC Name</label>
+
+    <!-- Close button on top-right -->
+    <UIButton class="close-button" onclick="self:closeNpcTrade()"></UIButton>
+
+    <div id="npc_inner_content" style="display: none;">
+
+        <!-- Tab Buttons (hidden) -->
+        <div class="tab-container" placement="top-left">
+            <TabButton id="buyTab" text="Buy" tooltip="List of items that you're able to buy" checked="true" />
+            <TabButton id="sellTab" text="Sell" tooltip="List of items that you're able to sell" />
+        </div>
+
+        <!-- Items Panel with Scrollbar (hidden) -->
+        <div class="items-panel-wrapper minipanel">
+            <ScrollablePanel id="itemsPanel" layout="type: grid; cell-size: 160 95; flow: true; auto-spacing: true">
+            </ScrollablePanel>
+        </div>
+
+        <!-- Two Column Layout: Setup Panel + Buy Options (hidden) -->
+        <div class="two-column-container">
+            <div id="setupPanel" class="setup-panel minipanel" enabled="false">
+                <div class="info-row">
+                    <label class="info-label">Name:</label>
+                    <label id="name" class="info-value"></label>
+                </div>
+                <div class="info-row">
+                    <label class="info-label">Price:</label>
+                    <label id="price" class="info-value"></label>
+                </div>
+                <div class="info-row">
+                    <label class="info-label">Your Money:</label>
+                    <label id="money" class="info-value"></label>
+                </div>
+                <div id="weightDesc" class="info-row">
+                    <label class="info-label">Weight:</label>
+                    <label id="weight" class="info-value"></label>
+                </div>
+                <div id="capacityDesc" class="info-row">
+                    <label class="info-label">Your Capacity:</label>
+                    <label id="capacity" class="info-value"></label>
+                </div>
+                <HorizontalScrollBar id="quantityScroll" show-value="true" minimum="1" maximum="100" step="1" />
+            </div>
+
+            <div id="buyOptions" class="buy-options minipanel">
+                <div class="search-row">
+                    <label id="searchLabel">Search:</label>
+                    <TextEdit id="searchText" onchange="self:onSearchTextChange()" />
+                </div>
+                <CheckBox id="buyWithBackpack" class="checkbox-item" text="Buy with backpack"
+                    onchange="self:onBuyWithBackpackChange()" />
+                <CheckBox id="ignoreCapacity" class="checkbox-item" text="Ignore capacity"
+                    onchange="self:onIgnoreCapacityChange()" />
+                <CheckBox id="ignoreEquipped" class="checkbox-item" text="Ignore equipped" checked="true"
+                    onchange="self:onIgnoreEquippedChange()" />
+                <CheckBox id="showAllItems" class="checkbox-item" text="Show all items" checked="true"
+                    onchange="self:onShowAllItemsChange()" />
+            </div>
+
+        </div>
+
+        <!-- Bottom Buttons (hidden) -->
+        <div class="buttons-panel">
+            <Button onclick="self:closeNpcTrade()" text="Close" />
+            <Button id="tradeButton" onclick="self:onTradeClick()" text="Buy" />
+            <Button id="sellAllButton" onclick="self:sellAll()" text="Sell All" />
+        </div>
+
     </div>
-
-    <!-- Items Panel with Scrollbar (hidden) -->
-    <div class="items-panel-wrapper minipanel">
-      <ScrollablePanel id="itemsPanel" 
-        layout="type: grid; cell-size: 160 95; flow: true; auto-spacing: true">
-      </ScrollablePanel>
-    </div>
-
-    <!-- Two Column Layout: Setup Panel + Buy Options (hidden) -->
-    <div class="two-column-container">
-      <div id="setupPanel" class="setup-panel minipanel" enabled="false">
-        <div class="info-row">
-          <label class="info-label">Name:</label>
-          <label id="name" class="info-value"></label>
-        </div>
-        <div class="info-row">
-          <label class="info-label">Price:</label>
-          <label id="price" class="info-value"></label>
-        </div>
-        <div class="info-row">
-          <label class="info-label">Your Money:</label>
-          <label id="money" class="info-value"></label>
-        </div>
-        <div id="weightDesc" class="info-row">
-          <label class="info-label">Weight:</label>
-          <label id="weight" class="info-value"></label>
-        </div>
-        <div id="capacityDesc" class="info-row">
-          <label class="info-label">Your Capacity:</label>
-          <label id="capacity" class="info-value"></label>
-        </div>
-        <HorizontalScrollBar id="quantityScroll" show-value="true" minimum="1" maximum="100" step="1" />
-      </div>
-
-      <div id="buyOptions" class="buy-options minipanel">
-        <div class="search-row">
-          <label id="searchLabel">Search:</label>
-          <TextEdit id="searchText" onchange="self:onSearchTextChange()" />
-        </div>
-        <CheckBox id="buyWithBackpack" class="checkbox-item" text="Buy with backpack" onchange="self:onBuyWithBackpackChange()" />
-        <CheckBox id="ignoreCapacity" class="checkbox-item" text="Ignore capacity" onchange="self:onIgnoreCapacityChange()" />
-        <CheckBox id="ignoreEquipped" class="checkbox-item" text="Ignore equipped" checked="true" onchange="self:onIgnoreEquippedChange()" />
-        <CheckBox id="showAllItems" class="checkbox-item" text="Show all items" checked="true" onchange="self:onShowAllItemsChange()" />
-      </div>
-
-    </div>
-
-    <!-- Bottom Buttons (hidden) -->
-    <div class="buttons-panel">
-      <Button onclick="self:closeNpcTrade()" text="Close" />
-      <Button id="tradeButton" onclick="self:onTradeClick()" text="Buy" />
-      <Button id="sellAllButton" onclick="self:sellAll()" text="Sell All" />
-    </div>
-
-  </div>
 </MainWindow>
+
 </html>
