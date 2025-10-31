@@ -1,0 +1,31 @@
+NPCOfferLabel < Label
+  anchors.left: prev.right
+  anchors.top: prev.top
+  margin-left: 5
+  text-auto-resize: true
+
+NPCItemBox < UICheckBox
+  border-width: 1
+  border-color: #000000
+  color: #aaaaaa
+  text-align: center
+  text-offset: 0 20
+  @onCheckChange: modules.game_npctrade.onItemBoxChecked(self)
+
+  Item
+    id: item
+    phantom: true
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    image-color: #ffffffff
+    margin-top: 5
+
+  $checked on:
+    border-color: #ffffff
+
+  $!checked:
+    border-color: #000000
+
+  $!on:
+    image-color: #ffffff88
+    color: #aaaaaa88

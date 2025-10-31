@@ -40,32 +40,40 @@ selectedItem = nil
 
 cancelNextRelease = nil
 
-function init()
-    npcWindow = g_ui.displayUI('npctrade')
+NPCTRADEController = Controller:new()
+
+function NPCTRADEController:onInit()
+    -- import style (widget templates) and load HTML
+    g_ui.importStyle('style.otui')
+    self:loadHtml('npctrade.html')
+
+    -- keep compatibility by exposing the ui root as npcWindow
+    npcWindow = self.ui
     npcWindow:setVisible(false)
 
-    itemsPanel = npcWindow:recursiveGetChildById('itemsPanel')
-    searchText = npcWindow:recursiveGetChildById('searchText')
+    -- cache common widgets using querySelector for HTML widgets
+    itemsPanel = npcWindow:querySelector('#itemsPanel')
+    searchText = npcWindow:querySelector('#searchText')
 
-    setupPanel = npcWindow:recursiveGetChildById('setupPanel')
-    quantityScroll = setupPanel:getChildById('quantityScroll')
-    nameLabel = setupPanel:getChildById('name')
-    priceLabel = setupPanel:getChildById('price')
-    moneyLabel = setupPanel:getChildById('money')
-    weightDesc = setupPanel:getChildById('weightDesc')
-    weightLabel = setupPanel:getChildById('weight')
-    capacityDesc = setupPanel:getChildById('capacityDesc')
-    capacityLabel = setupPanel:getChildById('capacity')
-    tradeButton = npcWindow:recursiveGetChildById('tradeButton')
+    setupPanel = npcWindow:querySelector('#setupPanel')
+    quantityScroll = npcWindow:querySelector('#quantityScroll')
+    nameLabel = npcWindow:querySelector('#name')
+    priceLabel = npcWindow:querySelector('#price')
+    moneyLabel = npcWindow:querySelector('#money')
+    weightDesc = npcWindow:querySelector('#weightDesc')
+    weightLabel = npcWindow:querySelector('#weight')
+    capacityDesc = npcWindow:querySelector('#capacityDesc')
+    capacityLabel = npcWindow:querySelector('#capacity')
+    tradeButton = npcWindow:querySelector('#tradeButton')
 
-    buyWithBackpack = npcWindow:recursiveGetChildById('buyWithBackpack')
-    ignoreCapacity = npcWindow:recursiveGetChildById('ignoreCapacity')
-    ignoreEquipped = npcWindow:recursiveGetChildById('ignoreEquipped')
-    showAllItems = npcWindow:recursiveGetChildById('showAllItems')
-    sellAllButton = npcWindow:recursiveGetChildById('sellAllButton')
+    buyWithBackpack = npcWindow:querySelector('#buyWithBackpack')
+    ignoreCapacity = npcWindow:querySelector('#ignoreCapacity')
+    ignoreEquipped = npcWindow:querySelector('#ignoreEquipped')
+    showAllItems = npcWindow:querySelector('#showAllItems')
+    sellAllButton = npcWindow:querySelector('#sellAllButton')
 
-    buyTab = npcWindow:getChildById('buyTab')
-    sellTab = npcWindow:getChildById('sellTab')
+    buyTab = npcWindow:querySelector('#buyTab')
+    sellTab = npcWindow:querySelector('#sellTab')
 
     radioTabs = UIRadioGroup.create()
     radioTabs:addWidget(buyTab)
@@ -79,36 +87,78 @@ function init()
         playerFreeCapacity = g_game.getLocalPlayer():getFreeCapacity()
     end
 
-    connect(g_game, {
+    -- register events (Controller helper will manage disconnects)
+    self:registerEvents(g_game, {
         onGameEnd = hide,
         onOpenNpcTrade = onOpenNpcTrade,
         onCloseNpcTrade = onCloseNpcTrade,
         onPlayerGoods = onPlayerGoods
     })
 
-    connect(LocalPlayer, {
+    self:registerEvents(LocalPlayer, {
         onFreeCapacityChange = onFreeCapacityChange,
         onInventoryChange = onInventoryChange
     })
+
+    -- bind quantity scroll change from Lua to avoid attribute parser issues
+    if quantityScroll then
+        quantityScroll.onValueChange = function()
+            onQuantityValueChange(quantityScroll:getValue())
+        end
+    end
 
     initialized = true
 end
 
-function terminate()
+function NPCTRADEController:onTerminate()
     initialized = false
-    npcWindow:destroy()
+    if self.ui then
+        self:unloadHtml()
+    end
+end
 
-    disconnect(g_game, {
-        onGameEnd = hide,
-        onOpenNpcTrade = onOpenNpcTrade,
-        onCloseNpcTrade = onCloseNpcTrade,
-        onPlayerGoods = onPlayerGoods
-    })
+function NPCTRADEController:toggleInnerContent()
+    if not self.ui then return end
+    local inner = self:findWidget('#npc_inner_content')
+    if inner then
+        if inner:isVisible() then
+            inner:setVisible(false)
+        else
+            inner:setVisible(true)
+        end
+    end
+end
 
-    disconnect(LocalPlayer, {
-        onFreeCapacityChange = onFreeCapacityChange,
-        onInventoryChange = onInventoryChange
-    })
+function NPCTRADEController:closeNpcTrade()
+    closeNpcTrade()
+end
+
+function NPCTRADEController:onTradeClick()
+    onTradeClick()
+end
+
+function NPCTRADEController:sellAll()
+    sellAll()
+end
+
+function NPCTRADEController:onSearchTextChange()
+    onSearchTextChange()
+end
+
+function NPCTRADEController:onBuyWithBackpackChange()
+    onBuyWithBackpackChange()
+end
+
+function NPCTRADEController:onIgnoreCapacityChange()
+    onIgnoreCapacityChange()
+end
+
+function NPCTRADEController:onIgnoreEquippedChange()
+    onIgnoreEquippedChange()
+end
+
+function NPCTRADEController:onShowAllItemsChange()
+    onShowAllItemsChange()
 end
 
 function show()

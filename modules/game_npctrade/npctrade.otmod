@@ -1,9 +1,9 @@
 Module
   name: game_npctrade
   description: NPC trade interface
-  author: andrefaramir, baxnie
+  author: andrefaramir, baxnie, libergod
   website: https://github.com/edubart/otclient
   sandboxed: true
-  scripts: [ npctrade ]
-  @onLoad: init()
-  @onUnload: terminate()
+  scripts: [ npctrade.lua ]
+  @onLoad: NPCTRADEController:init()
+  @onUnload: NPCTRADEController:terminate()
