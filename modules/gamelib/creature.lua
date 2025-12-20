@@ -149,7 +149,7 @@ function Creature:onIconsChange(icon, category, count)
     end
 
     -- Apply fiendish text shader only to monsters and only when the icon matches
-    if not self.isMonster or not self:isMonster() then
+    if type(self.isMonster) ~= 'function' or not self:isMonster() then
         return
     end
 
