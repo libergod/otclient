@@ -132,13 +132,7 @@ function UIMiniWindow:setupOnStart()
             [char] = {}
         }
     elseif not settings[char] then
-        -- if there are no settings for this character, we'll copy the settings from
-        -- another one, so we'll have something better than all the windows randomly positioned
-        for k, v in pairs(settings) do
-            settings[char] = v
-            g_settings.setNode('CharMiniWindows', settings)
-            break
-        end
+        settings[char] = {}
     end
 
     local selfSettings = settings[char][self:getId()]
@@ -358,7 +352,7 @@ function UIMiniWindow:getSettings(name)
     end
 
     local settings = g_settings.getNode('CharMiniWindows')
-    if settings then
+    if settings and settings[char] then
         local selfSettings = settings[char][self:getId()]
         if selfSettings then
             return selfSettings[name]
