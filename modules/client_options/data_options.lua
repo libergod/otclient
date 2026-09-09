@@ -177,6 +177,16 @@ return {
             end
         end
     },
+    consoleMaxLines                   = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.interfaceConsole:recursiveGetChildById('consoleMaxLines'):setText(tr('Chat scrollback: %d lines',
+                value))
+            if modules and modules.game_console and modules.game_console.setMaxLines then
+                modules.game_console.setMaxLines(value)
+            end
+        end
+    },
     showOutfitsOnList                 = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
