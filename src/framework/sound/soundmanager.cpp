@@ -88,6 +88,7 @@ void SoundManager::init()
     }
 
     refreshProtocolSoundSettings();
+    m_itemAmbienceDirty = true;
 }
 
 void SoundManager::terminate()

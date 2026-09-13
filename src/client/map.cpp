@@ -626,7 +626,9 @@ void Map::removeUnawareThings()
             }
         }
     }
-    // Missing removal from here? (SOUND QT)
+     #ifdef FRAMEWORK_SOUND
+     g_sounds.markItemAmbienceDirty();
+     #endif
 }
 
 void Map::setCentralPosition(const Position& centralPosition)

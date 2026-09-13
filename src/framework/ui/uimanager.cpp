@@ -749,8 +749,6 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
     if (!widget)
         throw Exception("unable to create widget of type '{}'", widgetType);
 
-    widget->setStyleFromNode(styleNode);
-
     if (parent) {
         if (parent->m_insertChildIndex > -1) {
             parent->insertChild(parent->m_insertChildIndex, widget);
@@ -760,6 +758,8 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
     }
 
     widget->callLuaField("onCreate");
+
+    widget->setStyleFromNode(styleNode);
 
     for (const auto& childNode : styleNode->children()) {
         if (!childNode->isUnique()) {

@@ -4,6 +4,6 @@ Module
   author: OTClient team
   sandboxed: true
   scripts: [ sounddebug ]
-  dependencies: [ client_topmenu, game_interface ]
+  dependencies: [ client_topmenu ]
   @onLoad: init()
   @onUnload: terminate()

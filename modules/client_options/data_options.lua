@@ -731,7 +731,14 @@ return {
     battleSoundCreatureSubChannelsNoises = true,
     battleSoundCreatureSubChannelsNoisesDeath = true,
     battleSoundCreatureSubChannelsAttacksAndSpells = true,
-    soundAnthem = true,
+    soundAnthem = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if modules.client and modules.client.reloadMusic then
+                modules.client.reloadMusic()
+            end
+        end
+    },
     soundFoodAndBeverages = true,
     soundMoveItem = true,
     soundUIsubChannelsInteractions = {

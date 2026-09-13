@@ -1,10 +1,16 @@
 local options = dofile("data_options")
+for k, obj in pairs(options) do
+    if type(obj) ~= "table" then
+        options[k] = { value = obj }
+    end
+end
+
 local savedOptions = {}
 
 local function snapshotOptions()
     savedOptions = {}
     for k, obj in pairs(options) do
-        savedOptions[k] = obj.value
+        savedOptions[k] = type(obj) == 'table' and obj.value or obj
     end
 end
 
@@ -295,7 +301,7 @@ local function setup()
 
     -- load options
     for k, obj in pairs(options) do
-        local v = obj.value
+        local v = type(obj) == 'table' and obj.value or obj
 
         if type(v) == 'boolean' then
             local value = g_settings.getBoolean(k, v)
@@ -543,7 +549,12 @@ function setOption(key, value, force)
         g_logger.warning(string.format("[client_options] Attempted to set unknown option: '%s'", key))
         return
     end
-    
+
+    if type(option) ~= 'table' then
+        option = { value = option }
+        options[key] = option
+    end
+
     if not force and option.value == value then
         return
     end
@@ -590,7 +601,7 @@ function getOption(key)
         g_logger.warning(string.format("[client_options] Attempted to get unknown option: '%s'", key))
         return nil
     end
-    return option.value
+    return type(option) == 'table' and option.value or option
 end
 
 function show()

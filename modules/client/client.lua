@@ -18,7 +18,9 @@ local function onGameEnd()
     end
 
     g_sounds.stopAll()
-    musicChannel:enqueue(musicFilename, 3)
+    if modules.client_options and modules.client_options.getOption('soundAnthem') then
+        musicChannel:enqueue(musicFilename, 3)
+    end
 end
 
 function setMusic(filename)
@@ -26,13 +28,30 @@ function setMusic(filename)
 
     if not g_game.isOnline() then
         musicChannel:stop()
-        musicChannel:enqueue(musicFilename, 3)
+        if modules.client_options and modules.client_options.getOption('soundAnthem') then
+            musicChannel:enqueue(musicFilename, 3)
+        end
+    end
+end
+
+function reloadMusic()
+    if not musicChannel then
+        return
+    end
+
+    if not g_game.isOnline() then
+        musicChannel:stop()
+        if modules.client_options and modules.client_options.getOption('soundAnthem') then
+            musicChannel:enqueue(musicFilename, 3)
+        end
     end
 end
 
 function startup()
     if musicChannel then
-        musicChannel:enqueue(musicFilename, 3)
+        if modules.client_options and modules.client_options.getOption('soundAnthem') then
+            musicChannel:enqueue(musicFilename, 3)
+        end
     end
 
     -- Check for startup errors
