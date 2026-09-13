@@ -589,6 +589,8 @@ void Map::removeUnawareThings()
         }
     });
 
+    bool tileCleanupRemovedTiles = false;
+
     if (!g_game.getFeature(Otc::GameKeepUnawareTiles)) {
         const auto& customAwareRange = g_game.getFeature(Otc::GameMapCache) ? AwareRange{
             .left = static_cast<uint8_t>(m_awareRange.left * 4),
@@ -617,6 +619,7 @@ void Map::removeUnawareThings()
 
                     block.remove(pos);
                     notificateTileUpdate(pos, nullptr, Otc::OPERATION_CLEAN);
+                    tileCleanupRemovedTiles = true;
                 }
 
                 if (blockEmpty)
@@ -626,9 +629,11 @@ void Map::removeUnawareThings()
             }
         }
     }
-     #ifdef FRAMEWORK_SOUND
-     g_sounds.markItemAmbienceDirty();
-     #endif
+
+    #ifdef FRAMEWORK_SOUND
+    if (tileCleanupRemovedTiles)
+        g_sounds.markItemAmbienceDirty();
+    #endif
 }
 
 void Map::setCentralPosition(const Position& centralPosition)
