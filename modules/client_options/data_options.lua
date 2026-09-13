@@ -1,5 +1,6 @@
 local ownBattleSubChannelsSaved = nil
 local otherPlayersSubChannelsSaved = nil
+local consoleMessagesSubChannelsSaved = nil
 
 return {
     vsync                             = {
@@ -210,16 +211,9 @@ return {
             g_app.setMaxFps(v)
         end
     },
-    enableAudio                       = {
-        value = true,
-        action = function(value, options, controller, panels, extraWidgets)
-            if value then
-                setOption("soundMaster", 100)
-            else
-                setOption("soundMaster", 1)
-            end
-        end
-    },
+    -- Kept only so g_sounds.setAudioEnabled has a persisted default at client startup;
+    -- muting/unmuting at runtime is handled by the master volume slider (see soundMaster below).
+    enableAudio                       = true,
     enableLights                      = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
@@ -758,6 +752,53 @@ return {
     soundUIsubChannelsJoinLeaveParty = true,
     soundUIsubChannelsVipLoginLogout = true,
     soundNotificationUIInteractions = true,
+    soundNotificationConsoleMessages = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            local panel = panels.iuSoundPanel:recursiveGetChildById("soundNotification")
+            if not panel then
+                return
+            end
+
+            if value then
+                panel:enable()
+                if consoleMessagesSubChannelsSaved then
+                    setOption('soundNotificationsubChannelsParty', consoleMessagesSubChannelsSaved.party, true)
+                    setOption('soundNotificationsubChannelsGuild', consoleMessagesSubChannelsSaved.guild, true)
+                    setOption('soundNotificationsubChannelsLocalChat', consoleMessagesSubChannelsSaved.localChat, true)
+                    setOption('soundNotificationsubChannelsPrivateMessages', consoleMessagesSubChannelsSaved.privateMessages, true)
+                    setOption('soundNotificationsubChannelsNPC', consoleMessagesSubChannelsSaved.npc, true)
+                    setOption('soundNotificationsubChannelsGlobal', consoleMessagesSubChannelsSaved.global, true)
+                    setOption('soundNotificationsubChannelsTeamFinder', consoleMessagesSubChannelsSaved.teamFinder, true)
+                    setOption('soundNotificationsubChannelsRaidAnnouncements', consoleMessagesSubChannelsSaved.raidAnnouncements, true)
+                    setOption('soundNotificationsubChannelsSystemAnnouncements', consoleMessagesSubChannelsSaved.systemAnnouncements, true)
+                    consoleMessagesSubChannelsSaved = nil
+                end
+            else
+                consoleMessagesSubChannelsSaved = {
+                    party = getOption('soundNotificationsubChannelsParty'),
+                    guild = getOption('soundNotificationsubChannelsGuild'),
+                    localChat = getOption('soundNotificationsubChannelsLocalChat'),
+                    privateMessages = getOption('soundNotificationsubChannelsPrivateMessages'),
+                    npc = getOption('soundNotificationsubChannelsNPC'),
+                    global = getOption('soundNotificationsubChannelsGlobal'),
+                    teamFinder = getOption('soundNotificationsubChannelsTeamFinder'),
+                    raidAnnouncements = getOption('soundNotificationsubChannelsRaidAnnouncements'),
+                    systemAnnouncements = getOption('soundNotificationsubChannelsSystemAnnouncements')
+                }
+                setOption('soundNotificationsubChannelsParty', false, true)
+                setOption('soundNotificationsubChannelsGuild', false, true)
+                setOption('soundNotificationsubChannelsLocalChat', false, true)
+                setOption('soundNotificationsubChannelsPrivateMessages', false, true)
+                setOption('soundNotificationsubChannelsNPC', false, true)
+                setOption('soundNotificationsubChannelsGlobal', false, true)
+                setOption('soundNotificationsubChannelsTeamFinder', false, true)
+                setOption('soundNotificationsubChannelsRaidAnnouncements', false, true)
+                setOption('soundNotificationsubChannelsSystemAnnouncements', false, true)
+                panel:disable()
+            end
+        end
+    },
     soundNotificationsubChannelsParty = true,
     soundNotificationsubChannelsGuild = true,
     soundNotificationsubChannelsLocalChat = true,
@@ -804,8 +845,9 @@ return {
         end
     },
     soundMaster = {
-        value = 100,
+        value = 25,
         aux = true,
+        lastVolume = 25,
         action = function(value, options, controller, panels, extraWidgets)
             if not g_sounds then
                 return

@@ -113,6 +113,7 @@ local protocolSoundSettingsKeys = {
     soundUIsubChannelsInteractions = true,
     soundUIsubChannelsJoinLeaveParty = true,
     soundUIsubChannelsVipLoginLogout = true,
+    soundNotificationConsoleMessages = true,
     soundNotificationUIInteractions = true,
     soundNotificationsubChannelsParty = true,
     soundNotificationsubChannelsGuild = true,
@@ -155,6 +156,21 @@ end
 
 local function toggleOption(key)
     setOption(key, not getOption(key))
+end
+
+-- Toggles mute without discarding the user's previously saved master volume
+local function toggleMute()
+    local current = getOption('soundMaster')
+    if current <= 1 then
+        local restoreVolume = options.soundMaster.lastVolume
+        if not restoreVolume or restoreVolume <= 1 then
+            restoreVolume = 25
+        end
+        setOption('soundMaster', restoreVolume)
+    else
+        options.soundMaster.lastVolume = current
+        setOption('soundMaster', 1)
+    end
 end
 
 local function setupComboBox()
@@ -249,13 +265,13 @@ local function setup()
         local v = obj.value
 
         if type(v) == 'boolean' then
-            local value = g_settings.getBoolean(k)
+            local value = g_settings.getBoolean(k, v)
             setOption(k, value, true)
         elseif type(v) == 'number' then
-            local value = g_settings.getNumber(k)
+            local value = g_settings.getNumber(k, v)
             setOption(k, value, true)
         elseif type(v) == 'string' then
-            local value = g_settings.getString(k)
+            local value = g_settings.getString(k, v)
             setOption(k, value, true)
         end
     end
@@ -336,7 +352,7 @@ function controller:onInit()
     end
 
     extraWidgets.audioButton = modules.client_topmenu.addTopRightToggleButton('audioButton', tr('Audio'),
-        '/images/topbuttons/button_mute_up', function() toggleOption('enableAudio') end)
+        '/images/topbuttons/button_mute_up', toggleMute)
 
     extraWidgets.optionsButton = modules.client_topmenu.addTopRightToggleButton('optionsButton', tr('Options'),
         '/images/topbuttons/button_options', toggle)
@@ -421,7 +437,7 @@ function controller:onInit()
     Keybind.bind("Sound", "Mute/unmute", {
         {
             type = KEY_DOWN,
-            callback = function() toggleOption('enableAudio') end,
+            callback = toggleMute,
         }
     })
 end

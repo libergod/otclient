@@ -151,7 +151,7 @@ void SoundManager::refreshProtocolSoundSettings()
     m_protocolSoundSettings.uiJoinLeaveParty = getBooleanSetting("soundUIsubChannelsJoinLeaveParty", true);
     m_protocolSoundSettings.uiVipLoginLogout = getBooleanSetting("soundUIsubChannelsVipLoginLogout", true);
 
-    m_protocolSoundSettings.notificationInteractions = getBooleanSetting("soundNotificationUIInteractions", true);
+    m_protocolSoundSettings.notificationInteractions = getBooleanSetting("soundNotificationConsoleMessages", getBooleanSetting("soundNotificationUIInteractions", true));
     m_protocolSoundSettings.notificationParty = getBooleanSetting("soundNotificationsubChannelsParty", true);
     m_protocolSoundSettings.notificationGuild = getBooleanSetting("soundNotificationsubChannelsGuild", true);
     m_protocolSoundSettings.notificationLocalChat = getBooleanSetting("soundNotificationsubChannelsLocalChat", true);
