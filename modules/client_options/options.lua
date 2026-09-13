@@ -1,4 +1,13 @@
 local options = dofile("data_options")
+local savedOptions = {}
+
+local function snapshotOptions()
+    savedOptions = {}
+    for k, obj in pairs(options) do
+        savedOptions[k] = obj.value
+    end
+end
+
 panels = {
     generalPanel = nil,
     graphicsPanel = nil,
@@ -364,6 +373,8 @@ local function setup()
         parent:setHeight(0)
         parent:setMarginTop(0)
     end
+
+    snapshotOptions()
 end
 
 
@@ -551,6 +562,8 @@ function setOption(key, value, force)
                 widget:setValue(value)
             elseif widget:recursiveGetChildById('valueBar') then
                 widget:recursiveGetChildById('valueBar'):setValue(value)
+            elseif widget.setCurrentOptionByData then
+                widget:setCurrentOptionByData(value, true)
             end
             break
         end
@@ -580,6 +593,7 @@ function getOption(key)
 end
 
 function show()
+    snapshotOptions()
     controller.ui:show()
     controller.ui:raise()
     controller.ui:focus()
@@ -589,8 +603,6 @@ function show()
 end
 
 function hide()
-    -- Save all settings when closing the options window
-    g_settings.save()
     controller.ui:hide()
     if extraWidgets.optionsButton then
         extraWidgets.optionsButton:setOn(false)
@@ -599,11 +611,24 @@ end
 
 function saveOptions()
     g_settings.save()
+    snapshotOptions()
+end
+
+function cancelOptions()
+    if savedOptions then
+        for k, savedVal in pairs(savedOptions) do
+            if options[k] and options[k].value ~= savedVal then
+                setOption(k, savedVal, true)
+            end
+        end
+    end
+    g_settings.save()
+    hide()
 end
 
 function toggle()
     if controller.ui:isVisible() then
-        hide()
+        cancelOptions()
         return
     end
     if not controller.ui.openedCategory then
@@ -626,6 +651,10 @@ end
 
 function removeTab(v)
     print("to prevent the error use Ex   modules.client_options.addButton('Interface', 'HP/MP Circle', optionPanel)")
+end
+
+function onShowAdvancedOptions(widget, checked)
+    -- TODO: Implement Show Advanced Options functionality in the near future
 end
 
 local function toggleSubCategories(parent, isOpen)
