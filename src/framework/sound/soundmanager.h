@@ -84,6 +84,9 @@ public:
     bool isAudioEnabled() { return m_device && m_context && m_audioEnabled; }
     void enableAudio() { setAudioEnabled(true); }
     void disableAudio() { setAudioEnabled(false); }
+    std::vector<std::string> getAudioDevices();
+    std::string getAudioDevice() const { return m_audioDevice; }
+    bool setAudioDevice(const std::string& deviceName);
     void stopAll();
     void setPosition(const Point& pos);
     bool isEaxEnabled();
@@ -228,11 +231,13 @@ private:
 
     SoundSourcePtr createSoundSource(const std::string& name);
     bool loadFromProtobuf(const std::string& directory, const std::string& fileName);
+    void restartAudioDevice(const std::string& targetDevice);
 
     ALCdevice* m_device{};
     ALCcontext* m_context{};
     ALuint m_effect;
     ALuint m_effectSlot;
+    std::string m_audioDevice;
 
     std::unordered_map<StreamSoundSourcePtr, std::shared_future<SoundFilePtr>> m_streamFiles;
     std::unordered_map<std::string, SoundBufferPtr> m_buffers;
