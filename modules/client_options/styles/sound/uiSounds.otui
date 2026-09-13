@@ -128,7 +128,7 @@ UIWidget
       QtCheckBox
         id: soundNotificationsubChannelsSystemAnnouncements
         !text: tr('System Announcements')
-        !tooltip: tr('Check this box to see how much time or how many charges are left \non your equipped items')
+        !tooltip: tr('Check this box to hear a sound for system announcements')
         @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
         UIWidget
           id: toolTipWidget
