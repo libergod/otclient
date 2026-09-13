@@ -1095,6 +1095,10 @@ function update()
     return
   end
 
+  if not g_sounds then
+    return
+  end
+
   syncOverlayVisibility()
 
   local snapshot = g_sounds.getDebugSnapshot()

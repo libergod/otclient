@@ -292,7 +292,6 @@ bool SoundManager::shouldSkipProtocolCooldown(const uint16_t soundEffectId)
     if (it != m_protocolLastPlayedAt.end() && now - it->second < PROTOCOL_COOLDOWN_MS)
         return true;
 
-    m_protocolLastPlayedAt[soundEffectId] = now;
     return false;
 }
 
@@ -316,7 +315,7 @@ std::optional<uint32_t> SoundManager::chooseProtocolAudioFileId(const uint16_t s
     return soundIds[randomIndex(m_randomEngine)];
 }
 
-bool SoundManager::playProtocolAudioFileId(const uint32_t audioFileId, const Position& pos, const int channelId, const float volumeMultiplier)
+bool SoundManager::playProtocolAudioFileId(const uint16_t soundEffectId, const uint32_t audioFileId, const Position& pos, const int channelId, const float volumeMultiplier)
 {
     const auto& localPlayer = g_game.getLocalPlayer();
     if (!localPlayer || !pos.isMapPosition())
@@ -342,6 +341,7 @@ bool SoundManager::playProtocolAudioFileId(const uint32_t audioFileId, const Pos
         return false;
 
     source->setPosition(Point(stereoBalance, 0));
+    m_protocolLastPlayedAt[soundEffectId] = g_clock.millis();
     return true;
 }
 
@@ -380,7 +380,7 @@ void SoundManager::playProtocolSoundMain(const uint8_t soundSource, const uint16
     const auto volume = getProtocolVolumeSetting(soundSource, soundType);
     const float volumeMultiplier = std::clamp(volume / 100.0f, 0.0f, 1.0f);
 
-    if (!playProtocolAudioFileId(*audioFileId, pos, CHANNEL_EFFECT_MAIN, volumeMultiplier))
+    if (!playProtocolAudioFileId(soundEffectId, *audioFileId, pos, CHANNEL_EFFECT_MAIN, volumeMultiplier))
         return;
 
     const auto& localPlayer = g_game.getLocalPlayer();
@@ -412,7 +412,7 @@ void SoundManager::playProtocolSoundSecondary(const uint8_t soundEnum, const uin
     const auto volume = getProtocolVolumeSetting(soundSource, soundType);
     const float volumeMultiplier = std::clamp(volume / 100.0f, 0.0f, 1.0f);
 
-    if (!playProtocolAudioFileId(*audioFileId, pos, CHANNEL_EFFECT_SECONDARY, volumeMultiplier))
+    if (!playProtocolAudioFileId(soundEffectId, *audioFileId, pos, CHANNEL_EFFECT_SECONDARY, volumeMultiplier))
         return;
 
     const auto& localPlayer = g_game.getLocalPlayer();

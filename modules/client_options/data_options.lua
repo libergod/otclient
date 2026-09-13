@@ -841,7 +841,8 @@ return {
                 return
             end
 
-            uiChannel:setGain(value / 100)
+            local masterVolume = (options.soundMaster.value or 100) / 100
+            uiChannel:setGain(value / 100 * masterVolume)
         end
     },
     soundDevice = {
@@ -867,8 +868,19 @@ return {
             end
             local soundMasterWidget = panels.soundPanel:recursiveGetChildById('soundMaster')
             soundMasterWidget:setText(string.format('Master Volume: %d %%', value))
+            local channelVolumes = {
+                Music = options.soundMusic.value,
+                Ambient = options.soundAmbience.value,
+                Item = options.soundItems.value,
+                Event = options.soundEventVolume.value,
+                SoundUI = options.soundUI.value,
+            }
             for channelName, channelId in pairs(SoundChannels) do
-                g_sounds.getChannel(channelId):setGain(value / 100)
+                local channel = g_sounds.getChannel(channelId)
+                if channel then
+                    local channelVolume = channelVolumes[channelName] or 100
+                    channel:setGain(channelVolume / 100 * value / 100)
+                end
             end
             local shouldDisable = value <= 1
             local hasChanged = shouldDisable ~= (options.soundMaster.aux or false)
@@ -910,7 +922,11 @@ return {
             if not g_sounds then
                 return
             end
-            g_sounds.getChannel(SoundChannels.Music):setGain(value / 100)
+            local musicChannel = g_sounds.getChannel(SoundChannels.Music)
+            if musicChannel then
+                local masterVolume = (options.soundMaster.value or 100) / 100
+                musicChannel:setGain(value / 100 * masterVolume)
+            end
             local shouldBeDisabled = value <= 1
             if shouldBeDisabled ~= (not options.soundMusic.aux) then
                 options.soundMusic.aux = not shouldBeDisabled
@@ -919,9 +935,15 @@ return {
                 end
                 options.soundMusic.event = scheduleEvent(function()
                     if shouldBeDisabled then
-                        g_sounds.getChannel(SoundChannels.Music):setEnabled(false)
+                        local channel = g_sounds.getChannel(SoundChannels.Music)
+                        if channel then
+                            channel:setEnabled(false)
+                        end
                     else
-                        g_sounds.getChannel(SoundChannels.Music):setEnabled(true)
+                        local channel = g_sounds.getChannel(SoundChannels.Music)
+                        if channel then
+                            channel:setEnabled(true)
+                        end
                     end
                 end, 100)  
             end
@@ -932,7 +954,11 @@ return {
         action = function(value, options, controller, panels, extraWidgets)
             panels.soundPanel:recursiveGetChildById('soundAmbience'):setText(tr('Ambience Volume: %d %%', value))
             if g_sounds then
-                g_sounds.getChannel(SoundChannels.Ambient):setGain(value / 100)
+                local channel = g_sounds.getChannel(SoundChannels.Ambient)
+                if channel then
+                    local masterVolume = (options.soundMaster.value or 100) / 100
+                    channel:setGain(value / 100 * masterVolume)
+                end
             end
         end
     },
@@ -941,7 +967,11 @@ return {
         action = function(value, options, controller, panels, extraWidgets)
             panels.soundPanel:recursiveGetChildById('soundItems'):setText(tr('Item Volume: %d %%', value))
             if g_sounds then
-                g_sounds.getChannel(SoundChannels.Item):setGain(value / 100)
+                local channel = g_sounds.getChannel(SoundChannels.Item)
+                if channel then
+                    local masterVolume = (options.soundMaster.value or 100) / 100
+                    channel:setGain(value / 100 * masterVolume)
+                end
             end
         end
     },
@@ -950,7 +980,11 @@ return {
         action = function(value, options, controller, panels, extraWidgets)
             panels.soundPanel:recursiveGetChildById('soundEventVolume'):setText(tr('Event Volume: %d %%', value))
             if g_sounds then
-                g_sounds.getChannel(SoundChannels.Event):setGain(value / 100)
+                local channel = g_sounds.getChannel(SoundChannels.Event)
+                if channel then
+                    local masterVolume = (options.soundMaster.value or 100) / 100
+                    channel:setGain(value / 100 * masterVolume)
+                end
             end
         end
     },

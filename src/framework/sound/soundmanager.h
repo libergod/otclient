@@ -226,7 +226,7 @@ private:
     static constexpr uint32_t ITEM_AMBIENCE_DEFAULT_MAX_DISTANCE = 8;
     const ClientSoundEffect* getClientSoundEffect(uint32_t id) const;
     std::optional<uint32_t> chooseProtocolAudioFileId(uint16_t soundEffectId);
-    bool playProtocolAudioFileId(uint32_t audioFileId, const Position& pos, int channelId, float volumeMultiplier = 1.0f);
+    bool playProtocolAudioFileId(uint16_t soundEffectId, uint32_t audioFileId, const Position& pos, int channelId, float volumeMultiplier = 1.0f);
     void logProtocolDebug(uint8_t soundSource, uint16_t soundEffectId, uint32_t audioFileId, const Position& pos, int channelId, float gain) const;
 
     SoundSourcePtr createSoundSource(const std::string& name);

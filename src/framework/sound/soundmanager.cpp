@@ -78,6 +78,8 @@ void SoundManager::init()
     m_context = alcCreateContext(m_device, nullptr);
     if (!m_context) {
         g_logger.error(fmt::format("unable to create audio context: {}", alcGetString(m_device, alcGetError(m_device))));
+        alcCloseDevice(m_device);
+        m_device = nullptr;
         return;
     }
 
@@ -243,7 +245,7 @@ bool SoundManager::setAudioDevice(const std::string& deviceName)
         targetDevice.clear();
     }
 
-    if (m_audioDevice == targetDevice && m_device) {
+    if (m_audioDevice == targetDevice && m_device && m_context) {
         return true;
     }
 
@@ -263,12 +265,12 @@ bool SoundManager::setAudioDevice(const std::string& deviceName)
         }
 
         restartAudioDevice(targetDevice);
-        return m_device != nullptr;
+        return m_device != nullptr && m_context != nullptr;
     }
 
     m_audioDevice = targetDevice;
     init();
-    return m_device != nullptr;
+    return m_device != nullptr && m_context != nullptr;
 }
 
 void SoundManager::restartAudioDevice(const std::string& targetDevice)
@@ -314,6 +316,8 @@ void SoundManager::restartAudioDevice(const std::string& targetDevice)
     m_context = alcCreateContext(m_device, nullptr);
     if (!m_context) {
         g_logger.error(fmt::format("unable to create audio context: {}", alcGetString(m_device, alcGetError(m_device))));
+        alcCloseDevice(m_device);
+        m_device = nullptr;
         return;
     }
 
@@ -674,6 +678,10 @@ bool SoundManager::loadFromProtobuf(const std::string& directory, const std::str
         if (!protobufSounds.ParseFromIstream(&fileInputStream)) {
             throw stdext::exception("Couldn't parse appearances lib.");
         }
+
+        m_clientSoundEffects.clear();
+        m_clientAmbientEffects.clear();
+        m_clientMusic.clear();
 
         // deserialize audio files
         for (const auto& protobufAudioFile : protobufSounds.sound()) {

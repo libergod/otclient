@@ -169,6 +169,7 @@ Point UIMap::getTilePoint(const Position& pos)
     point.x *= m_mapView->m_posInfo.horizontalStretchFactor;
     point.y *= m_mapView->m_posInfo.verticalStretchFactor;
     point += m_mapviewRect.topLeft();
+    point /= g_window.getDisplayDensity();
     return point;
 }
 
@@ -178,8 +179,9 @@ Rect UIMap::getTileRect(const Position& pos)
         return {};
 
     const auto point = getTilePoint(pos);
-    const auto width = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.horizontalStretchFactor));
-    const auto height = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.verticalStretchFactor));
+    const auto density = g_window.getDisplayDensity();
+    const auto width = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.horizontalStretchFactor / density));
+    const auto height = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.verticalStretchFactor / density));
     return { point.x, point.y, width, height };
 }
 
