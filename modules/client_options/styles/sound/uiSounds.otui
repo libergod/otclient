@@ -4,6 +4,7 @@ UIWidget
   Label
     id: info
     text: "The sound is currently deactivated. \nIncrease the master volume in the Options menu 'Sound'."
+    text-vertical-auto-resize: true
     color: #FF9854
     anchors.left: parent.left
     anchors.right: parent.right
