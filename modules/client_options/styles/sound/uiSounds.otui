@@ -38,7 +38,7 @@ UIWidget
 
     OptionCheckBox
       id: soundUIsubChannelsInteractions
-      !text: tr('UI Interactions')
+      !text: tr('UI interactions')
 
   SmallReversedQtPanel
     anchors.left: parent.left
@@ -49,7 +49,7 @@ UIWidget
 
     OptionCheckBox
       id: soundUIsubChannelsJoinLeaveParty
-      !text: tr('Join/Leave Party')
+      !text: tr('Join/leave Party')
 
     OptionCheckBox
       id: soundUIsubChannelsVipLoginLogout
@@ -61,16 +61,20 @@ UIWidget
     anchors.right: parent.right
     anchors.top: prev.bottom
     margin-top: 7
-    height: 160
+    height: 205
 
     OptionCheckBox
-      id: soundNotificationUIInteractions
-      !text: tr('UI Interactions')
+      id: soundNotificationConsoleMessages
+      !text: tr('Console Messages')
 
-    MiniWindowContents
+    UIWidget
       id: soundNotification
-      padding-left: 10
-      padding-right: 5
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      anchors.bottom: parent.bottom
+      margin-left: 10
+      margin-right: 5
       layout: verticalBox
       QtCheckBox
         id: soundNotificationsubChannelsParty
@@ -87,15 +91,31 @@ UIWidget
       QtCheckBox
         id: soundNotificationsubChannelsPrivateMessages
         !text: tr('Private Messages')
+        !tooltip: tr('Check this box to hear a sound when receiving a private message')
         @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+        UIWidget
+          id: toolTipWidget
+          image-source: /images/icons/show_gui_help_grey
+          size: 12 12
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 3
       QtCheckBox
         id: soundNotificationsubChannelsNPC
-        !text: tr('NPC')
+        !text: tr('NPCs')
         @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
       QtCheckBox
         id: soundNotificationsubChannelsGlobal
         !text: tr('Global')
+        !tooltip: tr('Check this box to hear a sound for global messages')
         @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+        UIWidget
+          id: toolTipWidget
+          image-source: /images/icons/show_gui_help_grey
+          size: 12 12
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 3
       QtCheckBox
         id: soundNotificationsubChannelsTeamFinder
         !text: tr('Team Finder')
