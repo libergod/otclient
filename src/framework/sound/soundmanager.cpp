@@ -45,6 +45,13 @@
 using namespace otclient::protobuf;
 #endif
 
+#ifndef ALC_ALL_DEVICES_SPECIFIER
+#define ALC_ALL_DEVICES_SPECIFIER 0x1013
+#endif
+#ifndef ALC_DEFAULT_ALL_DEVICES_SPECIFIER
+#define ALC_DEFAULT_ALL_DEVICES_SPECIFIER 0x1012
+#endif
+
 using json = nlohmann::json;
 
 SoundManager g_sounds;
@@ -56,7 +63,13 @@ void SoundManager::init()
     g_androidManager.attachToAppMainThread();
 #endif
 
-    m_device = alcOpenDevice(nullptr);
+    const char* devName = m_audioDevice.empty() ? nullptr : m_audioDevice.c_str();
+    m_device = alcOpenDevice(devName);
+    if (!m_device && !m_audioDevice.empty()) {
+        g_logger.warning(fmt::format("Unable to open audio device '{}', falling back to default", m_audioDevice));
+        m_audioDevice.clear();
+        m_device = alcOpenDevice(nullptr);
+    }
     if (!m_device) {
         g_logger.error("Unable to open audio device");
         return;
@@ -201,6 +214,114 @@ void SoundManager::setAudioEnabled(const bool enable)
     } else {
         m_itemAmbienceDirty = true;
     }
+}
+
+std::vector<std::string> SoundManager::getAudioDevices()
+{
+    std::vector<std::string> devices;
+    const ALCchar* deviceList = nullptr;
+
+    if (alcIsExtensionPresent(nullptr, "ALC_ENUMERATE_ALL_EXT") == ALC_TRUE) {
+        deviceList = alcGetString(nullptr, ALC_ALL_DEVICES_SPECIFIER);
+    } else if (alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT") == ALC_TRUE) {
+        deviceList = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
+    }
+
+    if (deviceList) {
+        while (*deviceList != '\0') {
+            devices.emplace_back(deviceList);
+            deviceList += strlen(deviceList) + 1;
+        }
+    }
+    return devices;
+}
+
+bool SoundManager::setAudioDevice(const std::string& deviceName)
+{
+    std::string targetDevice = deviceName;
+    if (targetDevice == "(auto-select)" || targetDevice == "auto") {
+        targetDevice.clear();
+    }
+
+    if (m_audioDevice == targetDevice && m_device) {
+        return true;
+    }
+
+    const char* devName = targetDevice.empty() ? nullptr : targetDevice.c_str();
+
+    if (m_device) {
+        if (alcIsExtensionPresent(m_device, "ALC_SOFT_reopen_device") == ALC_TRUE) {
+            typedef ALCboolean(ALC_APIENTRY* LPALCREOPENDEVICESOFT)(ALCdevice* device, const ALCchar* deviceName, const ALCint* attribs);
+            const auto alcReopenDeviceSOFT = reinterpret_cast<LPALCREOPENDEVICESOFT>(alcGetProcAddress(m_device, "alcReopenDeviceSOFT"));
+            if (alcReopenDeviceSOFT) {
+                if (alcReopenDeviceSOFT(m_device, devName, nullptr) == ALC_TRUE) {
+                    m_audioDevice = targetDevice;
+                    return true;
+                }
+                g_logger.warning(fmt::format("alcReopenDeviceSOFT failed for device '{}'", deviceName));
+            }
+        }
+
+        restartAudioDevice(targetDevice);
+        return m_device != nullptr;
+    }
+
+    m_audioDevice = targetDevice;
+    init();
+    return m_device != nullptr;
+}
+
+void SoundManager::restartAudioDevice(const std::string& targetDevice)
+{
+    m_audioDevice = targetDevice;
+
+    stopAll();
+    resetItemAmbience();
+
+    for (auto& streamFile : m_streamFiles) {
+        auto& future = streamFile.second;
+        future.wait();
+    }
+    m_streamFiles.clear();
+
+    m_sources.clear();
+    m_buffers.clear();
+    m_effects.clear();
+
+    alcMakeContextCurrent(nullptr);
+    if (m_context) {
+        alcDestroyContext(m_context);
+        m_context = nullptr;
+    }
+    if (m_device) {
+        alcCloseDevice(m_device);
+        m_device = nullptr;
+    }
+
+    const char* devName = m_audioDevice.empty() ? nullptr : m_audioDevice.c_str();
+    m_device = alcOpenDevice(devName);
+    if (!m_device && !m_audioDevice.empty()) {
+        g_logger.warning(fmt::format("Unable to open audio device '{}', falling back to default", m_audioDevice));
+        m_audioDevice.clear();
+        m_device = alcOpenDevice(nullptr);
+    }
+
+    if (!m_device) {
+        g_logger.error("Unable to open fallback audio device");
+        return;
+    }
+
+    m_context = alcCreateContext(m_device, nullptr);
+    if (!m_context) {
+        g_logger.error(fmt::format("unable to create audio context: {}", alcGetString(m_device, alcGetError(m_device))));
+        return;
+    }
+
+    if (alcMakeContextCurrent(m_context) != ALC_TRUE) {
+        g_logger.error(fmt::format("unable to make context current: {}", alcGetString(m_device, alcGetError(m_device))));
+    }
+
+    refreshProtocolSoundSettings();
 }
 
 void SoundManager::preload(std::string filename)

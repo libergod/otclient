@@ -844,6 +844,19 @@ return {
             uiChannel:setGain(value / 100)
         end
     },
+    soundDevice = {
+        value = '(auto-select)',
+        action = function(value, options, controller, panels, extraWidgets)
+            if not g_sounds or not g_sounds.setAudioDevice then
+                return
+            end
+            g_sounds.setAudioDevice(value)
+            local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+            if soundDeviceCombobox then
+                soundDeviceCombobox:setCurrentOptionByData(value, true)
+            end
+        end
+    },
     soundMaster = {
         value = 25,
         aux = true,

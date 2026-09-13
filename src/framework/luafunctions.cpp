@@ -1107,6 +1107,9 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_sounds", "disableAudio", &SoundManager::disableAudio, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "setAudioEnabled", &SoundManager::setAudioEnabled, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "isAudioEnabled", &SoundManager::isAudioEnabled, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "getAudioDevices", &SoundManager::getAudioDevices, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "getAudioDevice", &SoundManager::getAudioDevice, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "setAudioDevice", &SoundManager::setAudioDevice, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "setPosition", &SoundManager::setPosition, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "createSoundEffect", &SoundManager::createSoundEffect, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "isEaxEnabled", &SoundManager::isEaxEnabled, &g_sounds);

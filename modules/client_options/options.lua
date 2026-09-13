@@ -246,6 +246,29 @@ local function setupComboBox()
         setOption('profile', comboBox:getCurrentOption().data)
     end
 
+    local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+    if soundDeviceCombobox then
+        soundDeviceCombobox:clearOptions()
+        soundDeviceCombobox:addOption(tr('(auto-select)'), '(auto-select)')
+        if g_sounds and g_sounds.getAudioDevices then
+            local devices = g_sounds.getAudioDevices()
+            for _, device in ipairs(devices) do
+                local displayName = device:gsub('^OpenAL Soft on%s*', '')
+                soundDeviceCombobox:addOption(displayName, device)
+            end
+        end
+
+        soundDeviceCombobox.onOptionChange = function(comboBox, option)
+            local current = comboBox:getCurrentOption()
+            if current then
+                setOption('soundDevice', current.data)
+            end
+        end
+
+        local currentDevice = options.soundDevice and options.soundDevice.value or '(auto-select)'
+        soundDeviceCombobox:setCurrentOptionByData(currentDevice, true)
+    end
+
     for _, preset in ipairs(Keybind.presets) do
         listKeybindsPanel:addOption(preset)
     end
@@ -317,6 +340,11 @@ local function setup()
                     break
                 end
             end
+        end
+
+        local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+        if soundDeviceCombobox and options.soundDevice and options.soundDevice.value then
+            soundDeviceCombobox:setCurrentOptionByData(options.soundDevice.value, true)
         end
         
         -- Update loot control mode visibility
@@ -404,6 +432,11 @@ function controller:onInit()
                     break
                 end
             end
+        end
+
+        local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+        if soundDeviceCombobox and options.soundDevice and options.soundDevice.value then
+            soundDeviceCombobox:setCurrentOptionByData(options.soundDevice.value, true)
         end
     end, 1000)  -- 1 second delay to make sure everything is loaded
     
