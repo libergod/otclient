@@ -185,7 +185,7 @@ MainWindow
   @onEnter: |
     modules.client_options.saveOptions()
     modules.client_options.hide()
-  @onEscape: modules.client_options.cancelOptions()
+  @onEscape: modules.client_options.hide()
   $mobile:
     size: 500 380
 
@@ -287,4 +287,4 @@ MainWindow
     anchors.bottom: parent.bottom
     margin-bottom: -4
     @onClick: |
-      modules.client_options.cancelOptions()
+      modules.client_options.hide()

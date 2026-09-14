@@ -509,7 +509,20 @@ return {
     showLeftExtraPanel                = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
-            modules.game_interface.getLeftExtraPanel():setOn(value)
+            local panel = modules.game_interface.getLeftExtraPanel()
+            if not value and modules.game_interface.movePanel then
+                modules.game_interface.movePanel(panel)
+            end
+            panel:setOn(value)
+            panel:setVisible(value)
+            if value then
+                panel:setWidth(176)
+            else
+                panel:setWidth(0)
+            end
+            if modules.game_interface.updateSidePanelButtons then
+                modules.game_interface.updateSidePanelButtons()
+            end
             -- Update action bars when left extra panel visibility changes
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()
@@ -521,7 +534,20 @@ return {
     showLeftPanel                     = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
-            modules.game_interface.getLeftPanel():setOn(value)
+            local panel = modules.game_interface.getLeftPanel()
+            if not value and modules.game_interface.movePanel then
+                modules.game_interface.movePanel(panel)
+            end
+            panel:setOn(value)
+            panel:setVisible(value)
+            if value then
+                panel:setWidth(176)
+            else
+                panel:setWidth(0)
+            end
+            if modules.game_interface.updateSidePanelButtons then
+                modules.game_interface.updateSidePanelButtons()
+            end
             -- Update action bars when left panel visibility changes
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()
@@ -533,7 +559,20 @@ return {
     showRightExtraPanel               = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
-            modules.game_interface.getRightExtraPanel():setOn(value)
+            local panel = modules.game_interface.getRightExtraPanel()
+            if not value and modules.game_interface.movePanel then
+                modules.game_interface.movePanel(panel)
+            end
+            panel:setOn(value)
+            panel:setVisible(value)
+            if value then
+                panel:setWidth(176)
+            else
+                panel:setWidth(0)
+            end
+            if modules.game_interface.updateSidePanelButtons then
+                modules.game_interface.updateSidePanelButtons()
+            end
             -- Update action bars when right extra panel visibility changes
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()

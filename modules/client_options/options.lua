@@ -5,26 +5,6 @@ for k, obj in pairs(options) do
     end
 end
 
-local savedOptions = {}
-
-local function snapshotOptions()
-    savedOptions = {}
-    for k, obj in pairs(options) do
-        if type(obj) == 'table' then
-            local savedState = {
-                value = obj.value
-            }
-            if k == 'soundMaster' then
-                savedState.lastVolume = obj.lastVolume
-                savedState.persistedLastVolume = g_settings.getNumber('soundMasterLastVolume', obj.lastVolume or 25)
-            end
-            savedOptions[k] = savedState
-        else
-            savedOptions[k] = obj
-        end
-    end
-end
-
 panels = {
     generalPanel = nil,
     graphicsPanel = nil,
@@ -392,7 +372,6 @@ local function setup()
         parent:setMarginTop(0)
     end
 
-    snapshotOptions()
 end
 
 
@@ -566,20 +545,11 @@ function setOption(key, value, force)
         options[key] = option
     end
 
-    if key == 'soundMaster' and type(value) == 'table' then
-        local savedState = value
-        value = savedState.value
-        option.lastVolume = savedState.lastVolume ~= nil and savedState.lastVolume or option.lastVolume
-        if savedState.persistedLastVolume ~= nil then
-            g_settings.setNumber('soundMasterLastVolume', savedState.persistedLastVolume)
-        elseif savedState.lastVolume ~= nil then
-            g_settings.setNumber('soundMasterLastVolume', savedState.lastVolume)
-        end
-    end
-
     if not force and option.value == value then
         return
     end
+
+    option.value = value
 
     if option.action then
         option.action(value, options, controller, panels, extraWidgets)
@@ -603,7 +573,6 @@ function setOption(key, value, force)
         end
     end
 
-    option.value = value
     g_settings.set(key, value)
     syncProtocolSoundSettings(key)
 end
@@ -627,7 +596,6 @@ function getOption(key)
 end
 
 function show()
-    snapshotOptions()
     controller.ui:show()
     controller.ui:raise()
     controller.ui:focus()
@@ -645,28 +613,11 @@ end
 
 function saveOptions()
     g_settings.save()
-    snapshotOptions()
-end
-
-function cancelOptions()
-    if savedOptions then
-        for k, savedVal in pairs(savedOptions) do
-            local savedValue = type(savedVal) == 'table' and savedVal.value or savedVal
-            local soundStateChanged = options[k] and k == 'soundMaster' and type(savedVal) == 'table' and
-                (options[k].lastVolume ~= savedVal.lastVolume or
-                    g_settings.getNumber('soundMasterLastVolume', options[k].lastVolume or 25) ~= savedVal.persistedLastVolume)
-            if options[k] and (options[k].value ~= savedValue or soundStateChanged) then
-                setOption(k, savedVal, true)
-            end
-        end
-    end
-    g_settings.save()
-    hide()
 end
 
 function toggle()
     if controller.ui:isVisible() then
-        cancelOptions()
+        hide()
         return
     end
     if not controller.ui.openedCategory then
