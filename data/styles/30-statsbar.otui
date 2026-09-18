@@ -4,6 +4,10 @@ StatsBarDarkBackground < UIWidget
     image-source: /images/ui/containerslot
     image-border: 3
 
+StatsBarNoBackground < UIWidget
+  UIWidget
+    anchors.fill: parent
+
 StatsHorizontalBarGrade < UIWidget
   UIWidget
     id: grade_border_1
@@ -299,16 +303,17 @@ TopStatsSkillElement < UIWidget
     text-align: right
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-left: 10
-
+    margin-left: 7
+    font: verdana-11px-monochrome
+    
   UIWidget
     id: icon
     size: 9 9
     anchors.verticalCenter: level.verticalCenter
     anchors.left: level.right
-    margin-left: 7
+    margin-left: 5
 
-  StatsBarUp
+  StatsBarUpTransparent
     id: bar
     anchors.verticalCenter: level.verticalCenter
     anchors.left: icon.right
@@ -317,7 +322,15 @@ TopStatsSkillElement < UIWidget
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
     margin-left: 5
-    height: 7
+    height: 5
+  
+  UIWidget
+    id: xpBoostBtn
+    visible: false
+    size: 76 14
+    image-source: /images/ui/button-storexp-noborder-idle
+    anchors.verticalCenter: level.verticalCenter
+    margin-left: 5
 
 HarmonyIcon < UIWidget
   size: 13 13
@@ -388,6 +401,32 @@ TopStatsBarLargeOnTop < UIWidget
   StatsBarTopWithShrink
     anchors.fill: parent
 
+  StatsBarUp
+    id: health
+    anchors.top: icons.top
+    anchors.left: parent.left
+    anchors.right: proficiencyIcon.left
+    !statsbar-type: 'health'
+    !statsbar-size: 'large'
+    !statsbar-orientation: 'horizontal'
+    statsbar-text: true
+    margin-left: 12
+    margin-right: 7
+    height: 27
+
+  Panel
+    id: proficiencyIcon
+    image-border: 3
+    image-source: /images/ui/containerslot
+    anchors.top: parent.top
+    anchors.bottom: icons.bottom
+    anchors.right: icons.left
+    margin-top: 5
+    margin-right: 5
+    size: 27 27
+    layout:
+      type: horizontalBox
+
   Panel
     id: icons
     image-border: 3
@@ -395,22 +434,9 @@ TopStatsBarLargeOnTop < UIWidget
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     margin-top: 5
-    size: 75 27
+    size: 52 27
     layout:
       type: horizontalBox
-
-  StatsBarUp
-    id: health
-    anchors.top: icons.top
-    anchors.left: parent.left
-    anchors.right: icons.left
-    !statsbar-type: 'health'
-    !statsbar-size: 'large'
-    !statsbar-orientation: 'horizontal'
-    statsbar-text: true
-    margin-left: 15
-    margin-right: 7
-    height: 27
 
   MonkStats
     anchors.top: icons.top
@@ -426,7 +452,7 @@ TopStatsBarLargeOnTop < UIWidget
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-right: 15
+    margin-right: 12
     margin-left: 7
     height: 27
 
@@ -506,6 +532,7 @@ TopStatsBarParallelOnTop < UIWidget
     margin-right: 18
     height: 0
 
+    // TOP STATS PARALLEL
   ProficiencyTopBarWidget
     id: proficiencyTopBar
     anchors.top: skills.bottom
@@ -582,6 +609,7 @@ TopStatsBarDefaultOnTop < UIWidget
     margin-right: 18
     height: 0
 
+    // TOP STATS DEFAULT
   ProficiencyTopBarWidget
     id: proficiencyTopBar
     anchors.top: skills.bottom
@@ -634,7 +662,7 @@ TopStatsBarCompactOnTop < UIWidget
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-left: 15
+    margin-left: 12
     margin-right: 7
     height: 14
 
@@ -648,7 +676,7 @@ TopStatsBarCompactOnTop < UIWidget
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-right: 15
+    margin-right: 12
     margin-left: 7
     height: 14
 
@@ -725,11 +753,16 @@ TopStatsBar < UIWidget
     visible: false
     phantom: true
 
+// NOTE: Background of exp/skills on top
 StatsBarDarkBackground < UIWidget
   UIWidget
     anchors.fill: parent
     image-source: /images/ui/containerslot
     image-border: 3
+
+StatsBarNoBackground < UIWidget
+  UIWidget
+    anchors.fill: parent
 
 StatsHorizontalBarGrade < UIWidget
   UIWidget
@@ -912,6 +945,33 @@ StatsBarUp < UIStatsBar
     visible: false
     !text: '9999999999/9999999999'
 
+StatsBarUpTransparent < UIStatsBar
+  StatsBarNoBackground
+    anchors.fill: parent
+    phantom: true
+
+  UIWidget
+    id: bar
+    width: 1
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin: 1
+    image-repeated: true
+
+  StatsHorizontalBarGrade
+    id: horizontalGrade
+    anchors.fill: parent
+    visible: false
+
+  Label
+    id: text
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.horizontalCenter: parent.horizontalCenter
+    text-align: center
+    visible: false
+    !text: '9999999999/9999999999'
+
 StatsBarBottomWithShrink < UIWidget
   UIWidget
     anchors.fill: parent
@@ -1036,12 +1096,20 @@ BottomStatsSkillElement < UIWidget
     id: bar
     anchors.verticalCenter: levelBottom.verticalCenter
     anchors.left: icon.right
-    anchors.right: parent.right
+    anchors.right: next.left
     !statsbar-size: 'tiny'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
     margin-left: 5
-    height: 7
+    height: 6
+  
+  UIWidget
+    id: xpBoostBtn
+    size: 76 14
+    image-source: /images/ui/button-storexp
+    anchors.verticalCenter: levelBottom.verticalCenter
+    anchors.left: parent.right
+    margin-left: 7
 
 TopStatsBarLargeOnBottom < UIWidget
   StatsBarBottomWithShrink

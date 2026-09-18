@@ -142,6 +142,12 @@ local function reloadSkillsTab(skills, parent)
         if skillTuple.key == 'experience' then
             widget.level:setText(player:getLevel())
             widget.bar:setValue(player:getLevelPercent(), 100)
+            widget.bar:removeAnchor(AnchorRight)
+            widget.bar:addAnchor(AnchorRight, 'xpBoostBtn', AnchorLeft)
+            widget.bar:setMarginRight(15)
+            widget.xpBoostBtn:addAnchor(AnchorRight, 'parent', AnchorRight)
+            widget.xpBoostBtn:setVisible(true)
+            --Activate xpBoost icon in this line only
         elseif skillTuple.key == 'magic' then
             widget.level:setText(player:getMagicLevel())
             widget.bar:setValue(player:getMagicLevelPercent(), 100)
