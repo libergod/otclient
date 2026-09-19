@@ -423,16 +423,24 @@ TopStatsBarLargeOnTop < UIWidget
     anchors.right: icons.left
     margin-top: 5
     margin-right: 5
-    size: 27 27
+    size: 28 28
     layout:
       type: anchor
+
+    UIProgressRect
+      id: proficiencyProgress
+      background-color: #1abc9c
+      percent: 40
+      percent-reverse: true
+      phantom: true
+      anchors.fill: parent
+      margin: 2
 
     UIButton
       id: proficiencyButton
       image-source: /images/ui/button-grey-qt
       image-clip: 0 0 98 40
       image-border: 2
-      border: 1 alpha
       !tooltip: 'Proficiency Tree'
       size: 20 20
       margin-left: 0
@@ -444,13 +452,12 @@ TopStatsBarLargeOnTop < UIWidget
       $pressed:
         image-clip: 0 40 98 40
 
-      Panel
+      UIWidget
         id: proficiencyButtonIcon
-        image-border: 1
         image-source: /images/game/topbar/icon-proficiencytree-open
-        size: 15 15
+        image-auto-resize: true
+        phantom: true
         anchors.centerIn: parent
-        image-repeated: false
 
   Panel
     id: icons
