@@ -425,7 +425,32 @@ TopStatsBarLargeOnTop < UIWidget
     margin-right: 5
     size: 27 27
     layout:
-      type: horizontalBox
+      type: anchor
+
+    UIButton
+      id: proficiencyButton
+      image-source: /images/ui/button-grey-qt
+      image-clip: 0 0 98 40
+      image-border: 2
+      border: 1 alpha
+      !tooltip: 'Proficiency Tree'
+      size: 20 20
+      margin-left: 0
+      anchors.centerIn: parent
+      @onClick: |
+        if modules.game_proficiency and modules.game_proficiency.toggle then
+          modules.game_proficiency.toggle()
+        end
+      $pressed:
+        image-clip: 0 40 98 40
+
+      Panel
+        id: proficiencyButtonIcon
+        image-border: 1
+        image-source: /images/game/topbar/icon-proficiencytree-open
+        size: 15 15
+        anchors.centerIn: parent
+        image-repeated: false
 
   Panel
     id: icons
