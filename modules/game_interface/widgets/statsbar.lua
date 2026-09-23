@@ -144,7 +144,7 @@ local function reloadSkillsTab(skills, parent)
             widget.bar:setValue(player:getLevelPercent(), 100)
             widget.bar:removeAnchor(AnchorRight)
             widget.bar:addAnchor(AnchorRight, 'xpBoostBtn', AnchorLeft)
-            widget.bar:setMarginRight(15)
+            widget.bar:setMarginRight(8)
             widget.xpBoostBtn:addAnchor(AnchorRight, 'parent', AnchorRight)
             widget.xpBoostBtn:setVisible(true)
             --Activate xpBoost icon in this line only
@@ -201,12 +201,24 @@ function StatsBar.getCurrentStatsBarWithPosition()
     if statsBar[fullPosition] then
         -- Return the stats bar based on the full position.
         -- i.e. statsBarTop.largeOnTop
-        return statsBar[fullPosition]
+        local dimension = currentStats.dimension:gsub("^%l", string.upper)
+        local actualName = dimension .. "On" .. placement
+        statsBar[fullPosition].actualName = actualName
+        return statsBar[fullPosition], actualName
     else
         print("No stats bar with position found for:", statsBar)
     end
 
     return nil
+end
+
+function StatsBar.getCurrentStatsBarWithPositionName()
+    if currentStats.dimension == 'hide' or currentStats.placement == 'hide' then
+        return nil
+    end
+    local dimension = currentStats.dimension:gsub("^%l", string.upper)
+    local placement = currentStats.placement:gsub("^%l", string.upper)
+    return dimension .. "On" .. placement
 end
 
 function StatsBar.getCurrentStatsBar()
@@ -264,8 +276,94 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
     if player.getMaxManaShield then
         maxManaShield = player:getMaxManaShield()
     end
-    local shouldShowManaShield = manashield > 0 and maxManaShield > 0
-    if shouldShowManaShield then
+    local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and (not player:isKnight() and not player:isMonk())
+    local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
+    if shouldShowManaShield and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+        print("Current stats bar name:", currentStatsBarName)
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        -- bar.mana.showText = false
+        -- if bar.mana.text then
+        --     bar.mana.text:hide()
+        -- end
+
+        --print(StatsBar.getCurrentStatsBarWithPositionName())
+        bar.mana:setHeight(manaHeight - 2)
+        bar.manashield:show()
+        bar.manashield:setMarginTop(4)
+        bar.manashield:setHeight(shieldHeight - 2)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        --local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d', manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        --bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+        print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana:setHeight(manaHeight - 2)
+        bar.manashield:show()
+        bar.manashield:setMarginTop(4)
+        bar.manashield:setHeight(shieldHeight - 2)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        --local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d', 0, 0)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        --bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif shouldShowManaShield and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
+        print("Current stats bar name:", currentStatsBarName)
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
+        print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
         local shieldHeight = math.max(1, fullHeight - manaHeight)
@@ -276,46 +374,168 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         end
 
         bar.mana:setHeight(manaHeight)
-
+        bar.mana.text:hide()
+        bar.mana.showText = false
         bar.manashield:show()
-        bar.manashield:setMarginTop(0)
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif shouldShowManaShield and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
+        print("Current stats bar name:", currentStatsBarName)
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
         bar.manashield:setHeight(shieldHeight)
         bar.manashield:setValue(manashield, maxManaShield)
-        if bar.manashield.text then
-            bar.manashield.text:setWidth(400)
-            local textOffset = math.floor(manaHeight / 2)
-            local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
-            if not bar.manashield or not bar.manashield.text then
-                return
-            end
-            bar.manashield.text:setMarginTop(-textOffset)
-            bar.manashield.text:setMarginBottom(0)
-            bar.manashield.text:show()
-            bar.manashield.text:raise()
-            bar.manashield.showText = true
-            bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
         end
-    else
-        bar.mana.showText = true
-
-        if bar.mana.defaultHeight then
-            bar.mana:setHeight(bar.mana.defaultHeight)
-        end
-
-        bar.manashield:setMarginTop(0)
-        bar.manashield:setHeight(0)
-        bar.manashield:hide()
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
         bar.manashield.showText = true
-        if bar.manashield.text then
-            bar.manashield.text:hide()
-            bar.manashield.text:setMarginTop(0)
-            bar.manashield.text:setMarginBottom(0)
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
+        print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
         end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.mana.showText = false
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif shouldShowManaShield and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
+        print("Current stats bar name:", currentStatsBarName)
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
+        print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.mana.showText = false
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setText(manaText)
+    -- else
+    --     bar.mana.showText = true
+
+    --     if bar.mana.defaultHeight then
+    --         bar.mana:setHeight(bar.mana.defaultHeight)
+    --     end
+
+    --     bar.manashield:setMarginTop(0)
+    --     bar.manashield:setHeight(0)
+    --     bar.manashield:hide()
+    --     bar.manashield.showText = true
+    --     if bar.manashield.text then
+    --         bar.manashield.text:hide()
+    --         bar.manashield.text:setMarginTop(0)
+    --         bar.manashield.text:setMarginBottom(0)
+    --     end
     end
 
-    if not shouldShowManaShield and bar.mana.text then
-        bar.mana.text:show()
-    end
+    -- if not shouldShowManaShield and bar.mana.text then
+    --     bar.mana.text:show()
+    -- end
 end
 
 local function loadIcon(bitChanged, content, topmenu)

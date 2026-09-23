@@ -332,7 +332,11 @@ function updateTopBarProficiency()
 
     local profWidget = statsBar:recursiveGetChildById('proficiencyTopBar')
     if not profWidget then
-        return
+        local topLargeProficiency = statsBar:recursiveGetChildById('proficiencyIcon')
+        if not topLargeProficiency then
+            return
+        end
+        profWidget = topLargeProficiency
     end
 
     -- Get equipped weapon
@@ -345,9 +349,13 @@ function updateTopBarProficiency()
     if not leftSlotItem then
         -- No weapon equipped - show 0%
         local progressBar = profWidget:getChildById('proficiencyProgress')
-        local label = profWidget:getChildById('proficiencyLabel')
+        local IconTree = profWidget:getChildById('proficiencyIconTree') or nil
+        local label = profWidget:getChildById('proficiencyLabel') or nil
         if progressBar then
             progressBar:setPercent(0)
+        end
+        if IconTree then
+            IconTree:setImageSource('/images/game/topbar/icon-proficiencytree-off')
         end
         if label then
             label:setText('0%')
@@ -392,8 +400,8 @@ function updateTopBarProficiency()
         percent = math.min(100, math.max(0, percent))
 
         local progressBar = profWidget:getChildById('proficiencyProgress')
-        local label = profWidget:getChildById('proficiencyLabel')
-        local bg = profWidget:getChildById('proficiencyBg')
+        local label = profWidget:getChildById('proficiencyLabel') or nil
+        local bg = profWidget:getChildById('proficiencyBg') or nil
 
         if progressBar then
             progressBar:setPercent(percent)
@@ -1130,6 +1138,7 @@ function WeaponProficiency:updateExperienceProgress(currentExp, displayItem)
     local experienceWidget = self.window:recursiveGetChildById("progressDescription")
     local experienceLeftWidget = self.window:recursiveGetChildById("nextLevelDescription")
     local totalProgressWidget = self.window:recursiveGetChildById("proficiencyProgress")
+    local proficiencyIconTree = self.window:recursiveGetChildById("proficiencyIconTree")
 
     if not experienceWidget or not experienceLeftWidget then
         return
@@ -1148,9 +1157,15 @@ function WeaponProficiency:updateExperienceProgress(currentExp, displayItem)
 
     if masteryAchieved then
         experienceLeftWidget:setText("Mastery achieved")
+        if proficiencyIconTree then
+            proficiencyIconTree:setImageSource('/images/game/topbar/icon-proficiencytree-on')
+        end
     else
         experienceLeftWidget:setText(string.format("%s XP for next level",
             comma_value(currentCeilExperience - currentExp)))
+        if proficiencyIconTree then
+            proficiencyIconTree:setImageSource('/images/game/topbar/icon-proficiencytree-off')
+        end
     end
 
     if totalProgressWidget then
