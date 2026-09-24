@@ -487,9 +487,11 @@ TopStatsBarLargeOnTop < UIWidget
       type: horizontalBox
 
   MonkStats
+    id: monkStats
     anchors.top: icons.top
     anchors.bottom: icons.bottom
     anchors.left: icons.right
+    margin-top: 5
 
   StatsBarUp
     id: mana
@@ -510,7 +512,7 @@ TopStatsBarLargeOnTop < UIWidget
     id: manashield
     anchors.top: mana.bottom
     anchors.right: parent.right
-    anchors.left: icons.right
+    anchors.left: monkStats.right
     !statsbar-type: 'manashield'
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
@@ -1284,6 +1286,7 @@ TopStatsBarLargeOnBottom < UIWidget
     anchors.top: icons.top
     anchors.bottom: icons.bottom
     anchors.left: icons.right
+    margin-top: 7
 
   StatsBarUp
     id: mana

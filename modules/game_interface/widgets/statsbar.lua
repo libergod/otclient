@@ -278,7 +278,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
     end
     local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and (not player:isKnight() and not player:isMonk())
     local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
-    if shouldShowManaShield and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+    if shouldShowManaShield and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
         print("Current stats bar name:", currentStatsBarName)
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -515,27 +515,24 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
         bar.manashield.text:setText(manaText)
-    -- else
-    --     bar.mana.showText = true
+    elseif (player:isKnight() or player:isMonk()) then
+        print(string.format("Current stats bar name: %s Monk/Knight Preset.", currentStatsBarName))
+        if bar.mana.defaultHeight then
+            bar.mana:setHeight(bar.mana.defaultHeight)
+        end
 
-    --     if bar.mana.defaultHeight then
-    --         bar.mana:setHeight(bar.mana.defaultHeight)
-    --     end
-
-    --     bar.manashield:setMarginTop(0)
-    --     bar.manashield:setHeight(0)
-    --     bar.manashield:hide()
-    --     bar.manashield.showText = true
-    --     if bar.manashield.text then
-    --         bar.manashield.text:hide()
-    --         bar.manashield.text:setMarginTop(0)
-    --         bar.manashield.text:setMarginBottom(0)
-    --     end
+        bar.manashield:setMarginTop(0)
+        bar.manashield:setHeight(0)
+        bar.manashield:hide()
+        bar.manashield.bar:hide()
+        bar.manashield.text:hide()
+        bar.manashield.showText = false
+        if bar.manashield.text then
+            bar.manashield.text:hide()
+            bar.manashield.text:setMarginTop(0)
+            bar.manashield.text:setMarginBottom(0)
+        end        
     end
-
-    -- if not shouldShowManaShield and bar.mana.text then
-    --     bar.mana.text:show()
-    -- end
 end
 
 local function loadIcon(bitChanged, content, topmenu)

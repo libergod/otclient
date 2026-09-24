@@ -347,24 +347,91 @@ function updateTopBarProficiency()
 
     local leftSlotItem = player:getInventoryItem(InventorySlotLeft)
     if not leftSlotItem then
-        -- No weapon equipped - show 0%
-        local progressBar = profWidget:getChildById('proficiencyProgress')
-        local IconTree = profWidget:getChildById('proficiencyIconTree') or nil
-        local label = profWidget:getChildById('proficiencyLabel') or nil
-        if progressBar then
-            progressBar:setPercent(0)
+        -- Hide the proficiency progress bar, icon tree and label on Parallel/Default bars
+        -- when there is no weapon equipped.
+        local statsBarName = StatsBarModule.getCurrentStatsBarWithPositionName and
+                                 StatsBarModule.getCurrentStatsBarWithPositionName()
+        if statsBarName and (statsBarName == 'LargeOnTop' or statsBarName == 'LargeOnBottom') then
+            local highlightProficiencyButton = profWidget:getChildById('highlightProficiencyButton') or nil
+            local proficiencyProgress = profWidget:getChildById('proficiencyProgress') or nil
+            local proficiencyButton = profWidget:getChildById('proficiencyButton') or nil
+            if highlightProficiencyButton then
+                highlightProficiencyButton:hide()
+                highlightProficiencyButton:setVisible(false)
+            end
+            if proficiencyProgress then
+                proficiencyProgress:setPercent(0)
+                proficiencyProgress:hide()
+                proficiencyProgress:setVisible(false)
+            end
+            if proficiencyButton then
+                proficiencyButton:setWidth(28)
+                proficiencyButton:setHeight(28)
+            end
         end
-        if IconTree then
-            IconTree:setImageSource('/images/game/topbar/icon-proficiencytree-off')
-        end
-        if label then
-            label:setText('0%')
+
+        if statsBarName and (statsBarName == 'ParallelOnTop' or statsBarName == 'ParallelOnBottom' or
+            statsBarName == 'DefaultOnTop' or statsBarName == 'DefaultOnBottom') then
+            local progressBar = profWidget:getChildById('proficiencyProgress') or nil
+            local IconTree = profWidget:getChildById('proficiencyIconTree') or nil
+            local label = profWidget:getChildById('proficiencyLabel') or nil
+            local profBg = profWidget:getChildById('proficiencyBg') or nil
+            if progressBar then
+                progressBar:setPercent(0)
+                progressBar:hide()
+            end
+            if IconTree then
+                IconTree:setImageSource('/images/game/topbar/icon-proficiencytree-off')
+                IconTree:hide()
+            end
+            if label then
+                label:setText('0%')
+                label:hide()
+            end
+            if profBg then
+                profBg:hide()
+            end
+            local iconsPanel = statsBar:getChildById('icons')
+            if iconsPanel then
+                iconsPanel:setMarginLeft(0)
+            end
+            profWidget:setMarginRight(10)
+            return
         end
         return
     end
 
     local itemId = leftSlotItem:getId()
     local cacheData = WeaponProficiency.cacheList[itemId]
+
+    -- Restore the default margins on Parallel/Default bars when a weapon is equipped.
+    local statsBarName = StatsBarModule.getCurrentStatsBarWithPositionName and
+                             StatsBarModule.getCurrentStatsBarWithPositionName()
+
+    if statsBarName and (statsBarName == 'LargeOnTop' or statsBarName == 'LargeOnBottom') then
+        local highlightProficiencyButton = profWidget:getChildById('highlightProficiencyButton') or nil
+        local proficiencyProgress = profWidget:getChildById('proficiencyProgress') or nil
+        local proficiencyButton = profWidget:getChildById('proficiencyButton') or nil
+        if highlightProficiencyButton then
+            highlightProficiencyButton:show()
+        end
+        if proficiencyProgress then
+            proficiencyProgress:show()
+        end
+        if proficiencyButton then
+            proficiencyButton:setWidth(20)
+            proficiencyButton:setHeight(20)
+        end
+    end
+
+    if statsBarName and (statsBarName == 'ParallelOnTop' or statsBarName == 'ParallelOnBottom' or
+        statsBarName == 'DefaultOnTop' or statsBarName == 'DefaultOnBottom') then
+        local iconsPanel = statsBar:getChildById('icons')
+        if iconsPanel then
+            iconsPanel:setMarginLeft(60)
+        end
+        profWidget:setMarginRight(60)
+    end
 
     if cacheData then
         local exp = cacheData.exp or 0
@@ -405,11 +472,18 @@ function updateTopBarProficiency()
 
         if progressBar then
             progressBar:setPercent(percent)
+            progressBar:show()
         end
         if label then
             label:setText(percent .. '%')
+            label:show()
+        end
+        local iconTree = profWidget:getChildById('proficiencyIconTree') or nil
+        if iconTree then
+            iconTree:show()
         end
         if bg then
+            bg:show()
             local expInLevel = exp - currentLevelExp
             local expNeeded = nextLevelExp - currentLevelExp
             bg:setTooltip(string.format("Proficiency Progress: %s / %s", tostring(expInLevel), tostring(expNeeded)))
