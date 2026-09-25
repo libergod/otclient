@@ -32,6 +32,8 @@ local statsBarsDimensions = {
 
 local firstCall = true
 
+local isWarriorVocation = false
+
 local currentStats = {
     dimension = "hide",
     placement = "hide"
@@ -276,9 +278,31 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
     if player.getMaxManaShield then
         maxManaShield = player:getMaxManaShield()
     end
-    local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and (not player:isKnight() and not player:isMonk())
+    local isWarrior = isWarriorVocation or player:isKnight() or player:isMonk()
+    local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and not isWarrior
     local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
-    if shouldShowManaShield and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+
+    if isWarrior then
+        print(string.format("Current stats bar name: %s Monk/Knight Preset.", currentStatsBarName))
+        if bar.mana.defaultHeight then
+            bar.mana:setHeight(bar.mana.defaultHeight)
+        end
+
+        bar.manashield:setMarginTop(0)
+        bar.manashield:setHeight(0)
+        bar.manashield:hide()
+        bar.manashield.bar:hide()
+        bar.manashield.text:hide()
+        bar.manashield.showText = false
+        if bar.manashield.text then
+            bar.manashield.text:hide()
+            bar.manashield.text:setMarginTop(0)
+            bar.manashield.text:setMarginBottom(0)
+        end
+        return
+    end
+
+    if shouldShowManaShield and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
         print("Current stats bar name:", currentStatsBarName)
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -308,7 +332,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.bar:show()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
-    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+    elseif manashield <= 0 and maxManaShield <= 0 and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
         print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -362,7 +386,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
         bar.manashield.text:setText(manaText)
-    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
+    elseif manashield <= 0 and maxManaShield <= 0 and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
         print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -423,7 +447,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
         bar.manashield.text:setText(manaText)
-    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
+    elseif manashield <= 0 and maxManaShield <= 0 and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
         print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -484,7 +508,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
         bar.manashield.text:setText(manaText)
-    elseif manashield <= 0 and maxManaShield <= 0 and (not player:isKnight() and not player:isMonk()) and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
+    elseif manashield <= 0 and maxManaShield <= 0 and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
         print(string.format("Current stats bar name: %s No Mana Shield Active.", currentStatsBarName))
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
@@ -515,8 +539,9 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.showText = true
         bar.manashield.manaShieldText = manaText
         bar.manashield.text:setText(manaText)
-    elseif (player:isKnight() or player:isMonk()) then
-        print(string.format("Current stats bar name: %s Monk/Knight Preset.", currentStatsBarName))
+    else
+        bar.mana.showText = true
+
         if bar.mana.defaultHeight then
             bar.mana:setHeight(bar.mana.defaultHeight)
         end
@@ -528,10 +553,9 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield.text:hide()
         bar.manashield.showText = false
         if bar.manashield.text then
-            bar.manashield.text:hide()
             bar.manashield.text:setMarginTop(0)
             bar.manashield.text:setMarginBottom(0)
-        end        
+        end
     end
 end
 
@@ -696,6 +720,8 @@ function StatsBar.onSereneChange(localPlayer, serene, oldSerene)
 end
 
 function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
+    isWarriorVocation = vocation == VocationsClient.Knight or vocation == VocationsClient.EliteKnight or
+                        vocation == VocationsClient.Monk or vocation == VocationsClient.ExaltedMonk
     modules.game_healthcircle.checkMonkVocation()
     local statsBars = StatsBar.getAllStatsBarWithPosition()
     local isMonk = localPlayer:isMonk() and g_game.getFeature(GameVocationMonk)
@@ -709,6 +735,7 @@ function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
             end
         end
     end
+    StatsBar.reloadCurrentStatsBarQuickInfo()
 end
 
 function constructStatsBar(dimension, placement)
