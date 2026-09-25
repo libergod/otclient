@@ -1192,10 +1192,13 @@ BottomStatsSkillElement < UIWidget
   UIWidget
     id: xpBoostBtn
     size: 76 14
+    visible: false
     image-source: /images/ui/button-storexp
     anchors.verticalCenter: levelBottom.verticalCenter
-    anchors.left: parent.right
     margin-left: 2
+    @onClick: |
+      modules.game_store.toggle()
+      g_game.sendRequestStorePremiumBoost()
 
 TopStatsBarLargeOnBottom < UIWidget
   StatsBarBottomWithShrink

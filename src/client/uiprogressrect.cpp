@@ -220,6 +220,7 @@ void UIProgressRect::setPercentReverse(bool percentReverse)
 		return;
 
     m_percentReverse = percentReverse;
+    repaint();
 }
 
 
