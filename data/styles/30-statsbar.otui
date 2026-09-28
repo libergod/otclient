@@ -1007,7 +1007,7 @@ StatsBarBottomWithShrink < UIWidget
     size: 0 0
 
   UIWidget
-    id: rightDecreaseSidePanels
+    id: rightBottomDecreaseSidePanels
     anchors.right: parent.right
     anchors.top: rightBottomIncreaseSidePanels.bottom
     size: 0 0
