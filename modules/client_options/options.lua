@@ -272,7 +272,10 @@ local function setupComboBox()
             end
         end
 
-        local currentDevice = options.soundDevice and options.soundDevice.value or '(auto-select)'
+        local currentDevice = '(auto-select)'
+        if options.soundDevice and options.soundDevice.value and options.soundDevice.value ~= '' then
+            currentDevice = options.soundDevice.value
+        end
         soundDeviceCombobox:setCurrentOptionByData(currentDevice, true)
     end
 
@@ -292,7 +295,15 @@ local function setup()
 
     -- load options
     for k, obj in pairs(options) do
-        local v = type(obj) == 'table' and obj.value or obj
+        -- an option may either be a bare value or a table with an 'action'
+        -- an "and/or" chain cannot be used here: a default of 'false' would
+        -- fall through to the table and the option would never be loaded
+        local v
+        if type(obj) == 'table' then
+            v = obj.value
+        else
+            v = obj
+        end
 
         if type(v) == 'boolean' then
             local value = g_settings.getBoolean(k, v)
@@ -304,6 +315,13 @@ local function setup()
             local value = g_settings.getString(k, v)
             setOption(k, value, true)
         end
+    end
+
+    -- Every persisted option has been applied, so widgets that mirror option
+    -- values outside of the options panels (e.g. the game_interface top bar
+    -- arrows) can now sync themselves with the loaded state.
+    if modules.game_interface and modules.game_interface.onOptionsLoaded then
+        modules.game_interface.onOptionsLoaded()
     end
     
     -- Special handling for mouseControlMode to ensure it's in sync with the underlying options
@@ -592,7 +610,15 @@ function getOption(key)
         g_logger.warning(string.format("[client_options] Attempted to get unknown option: '%s'", key))
         return nil
     end
-    return type(option) == 'table' and option.value or option
+
+    -- an option may either be a bare value or a table with an 'action'
+    -- a plain "and/or" chain cannot be used here: a stored 'false' would fall
+    -- through to 'option' and make every caller see a truthy table
+    if type(option) == 'table' then
+        return option.value
+    end
+
+    return option
 end
 
 function show()

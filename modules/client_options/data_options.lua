@@ -506,79 +506,34 @@ return {
                 tr('Animated Message Scale: %sx', math.max(value + 0.5, 1)))
         end
     },
+    -- The side panel options are the single source of truth for the left/right
+    -- columns: game_interface.setSidePanelVisible() applies the visibility,
+    -- relocates the parked mini windows and refreshes the top bar arrows.
     showLeftExtraPanel                = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
-            local panel = modules.game_interface.getLeftExtraPanel()
-            if not value and modules.game_interface.movePanel then
-                modules.game_interface.movePanel(panel)
+            if not modules.game_interface then
+                return
             end
-            panel:setOn(value)
-            panel:setVisible(value)
-            if value then
-                panel:setWidth(176)
-            else
-                panel:setWidth(0)
-            end
-            if modules.game_interface.updateSidePanelButtons then
-                modules.game_interface.updateSidePanelButtons()
-            end
-            -- Update action bars when left extra panel visibility changes
-            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-                addEvent(function()
-                    modules.game_actionbar.updateVisibleWidgetsExternal()
-                end)
-            end
+            modules.game_interface.setSidePanelVisible(modules.game_interface.getLeftExtraPanel(), value)
         end
     },
     showLeftPanel                     = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
-            local panel = modules.game_interface.getLeftPanel()
-            if not value and modules.game_interface.movePanel then
-                modules.game_interface.movePanel(panel)
+            if not modules.game_interface then
+                return
             end
-            panel:setOn(value)
-            panel:setVisible(value)
-            if value then
-                panel:setWidth(176)
-            else
-                panel:setWidth(0)
-            end
-            if modules.game_interface.updateSidePanelButtons then
-                modules.game_interface.updateSidePanelButtons()
-            end
-            -- Update action bars when left panel visibility changes
-            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-                addEvent(function()
-                    modules.game_actionbar.updateVisibleWidgetsExternal()
-                end)
-            end
+            modules.game_interface.setSidePanelVisible(modules.game_interface.getLeftPanel(), value)
         end
     },
     showRightExtraPanel               = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
-            local panel = modules.game_interface.getRightExtraPanel()
-            if not value and modules.game_interface.movePanel then
-                modules.game_interface.movePanel(panel)
+            if not modules.game_interface then
+                return
             end
-            panel:setOn(value)
-            panel:setVisible(value)
-            if value then
-                panel:setWidth(176)
-            else
-                panel:setWidth(0)
-            end
-            if modules.game_interface.updateSidePanelButtons then
-                modules.game_interface.updateSidePanelButtons()
-            end
-            -- Update action bars when right extra panel visibility changes
-            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-                addEvent(function()
-                    modules.game_actionbar.updateVisibleWidgetsExternal()
-                end)
-            end
+            modules.game_interface.setSidePanelVisible(modules.game_interface.getRightExtraPanel(), value)
         end
     },
     showSpellGroupCooldowns           = {
