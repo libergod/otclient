@@ -364,7 +364,8 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
     if player.getMaxManaShield then
         maxManaShield = player:getMaxManaShield()
     end
-    local isWarrior = isWarriorVocation or player:isKnight() or (player:isMonk() and g_game.getFeature(GameVocationMonk))
+
+    local isWarrior = player:isKnight() or (player:isMonk() and g_game.getFeature(GameVocationMonk))
     local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and not isWarrior
     local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
 
