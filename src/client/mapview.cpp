@@ -172,6 +172,23 @@ void MapView::drawFloor()
             }
         }
 
+        if (!walking_tiles.empty()) {
+            for (int i = walking_tiles.size() - 1; i >= 0; i--) {
+                const auto& tile = walking_tiles[i];
+
+                if (alwaysTransparent) {
+                    const bool inRange = tile->getPosition().isInRange(_camera, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange(), true);
+                    g_drawPool.setOpacity(inRange ? .16 : .7);
+                }
+
+                tile->draw(m_posInfo, transformPositionTo2D(tile->getPosition()), flags);
+
+                if (alwaysTransparent)
+                    g_drawPool.resetOpacity();
+            }
+            walking_tiles.clear();
+        }
+
         for (const auto& missile : g_map.getFloorMissiles(z))
             missile->draw(transformPositionTo2D(missile->getPosition()), true);
 
@@ -990,44 +1007,15 @@ void MapView::setDrawLights(const bool enable)
 
 void MapView::updateViewportDirectionCache()
 {
+    const auto halfWidth = static_cast<uint8_t>(std::min<int>(m_drawDimension.width() / 2, 254));
+    const auto halfHeight = static_cast<uint8_t>(std::min<int>(m_drawDimension.height() / 2, 254));
+
     for (uint8_t dir = Otc::North; dir <= Otc::InvalidDirection; ++dir) {
         auto& vp = m_viewPortDirection[dir];
-        vp.top = m_posInfo.awareRange.top;
-        vp.right = m_posInfo.awareRange.right;
-        vp.bottom = vp.top;
-        vp.left = vp.right;
-
-        switch (dir) {
-            case Otc::North:
-            case Otc::South:
-                vp.top += 1;
-                vp.bottom += 1;
-                break;
-
-            case Otc::West:
-            case Otc::East:
-                vp.right += 1;
-                vp.left += 1;
-                break;
-
-            case Otc::NorthEast:
-            case Otc::SouthEast:
-            case Otc::NorthWest:
-            case Otc::SouthWest:
-                vp.left += 1;
-                vp.bottom += 1;
-                vp.top += 1;
-                vp.right += 1;
-                break;
-
-            case Otc::InvalidDirection:
-                vp.left -= 1;
-                vp.right -= 1;
-                break;
-
-            default:
-                break;
-        }
+        vp.left = halfWidth;
+        vp.top = halfHeight;
+        vp.right = static_cast<uint8_t>(halfWidth + 1);
+        vp.bottom = static_cast<uint8_t>(halfHeight + 1);
     }
 }
 
