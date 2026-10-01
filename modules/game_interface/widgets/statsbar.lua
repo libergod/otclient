@@ -367,18 +367,24 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         maxManaShield = player:getMaxManaShield()
     end
 
-    local isWarrior = player:isKnight() or (player:isMonk() and g_game.getFeature(GameVocationMonk))
+    local isWarrior = player:isKnight() or player:isPaladin() or
+                      (player:isMonk() and g_game.getFeature(GameVocationMonk))
     local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and not isWarrior
     local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
 
-    if isWarrior then
+    if isWarrior or not g_game.getFeature(GameManaShield) then
         if bar.mana.defaultHeight then
             bar.mana:setHeight(bar.mana.defaultHeight)
+        end
+        bar.mana.showText = true
+        if bar.mana.text then
+            bar.mana.text:show()
         end
 
         bar.manashield:setMarginTop(0)
         bar.manashield:setHeight(0)
         bar.manashield:hide()
+        bar.manashield:setValue(0, 0)
         bar.manashield.bar:hide()
         bar.manashield.text:hide()
         bar.manashield.showText = false
@@ -387,7 +393,7 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
             bar.manashield.text:setMarginTop(0)
             bar.manashield.text:setMarginBottom(0)
         end
-        updateManaShieldText(bar.manashield, nil, false)
+        updateManaShieldText(bar.manashield, '', false)
         return
     end
 
@@ -787,6 +793,7 @@ end
 
 function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
     isWarriorVocation = vocation == VocationsClient.Knight or vocation == VocationsClient.EliteKnight or
+                        vocation == VocationsClient.Paladin or vocation == VocationsClient.RoyalPaladin or
                         vocation == VocationsClient.Monk or vocation == VocationsClient.ExaltedMonk
     modules.game_healthcircle.checkMonkVocation()
     local statsBars = StatsBar.getAllStatsBarWithPosition()
