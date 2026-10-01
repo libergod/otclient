@@ -204,7 +204,6 @@ controller:registerEvents(g_game, {
 
         if version >= 1260 then
             g_game.enableFeature(GameThingQuiver)
-            g_game.enableFeature(GameManaShield)
         end
 
         if version >= 1264 then
@@ -220,6 +219,7 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GamePlayerFamiliars)
             g_game.disableFeature(GameEnvironmentEffect)
             g_game.disableFeature(GameItemAnimationPhase)
+            g_game.enableFeature(GameManaShield)
         end
 
         if version >= 1290 then
