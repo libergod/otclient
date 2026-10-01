@@ -1657,5 +1657,4 @@ ProficiencyTopBarWidget < UIWidget
     phantom: true
     image-source: /images/game/topbar/icon-proficiencytree-off
     $on:
-      property:
-        image-source: /images/game/topbar/icon-proficiencytree-on
+      image-source: /images/game/topbar/icon-proficiencytree-on

@@ -112,6 +112,7 @@ local function reloadSkillsTab(skills, parent)
         widget.level = widget:getChildById('level')
         widget.icon = widget:getChildById('icon')
         widget.bar = widget:getChildById('bar')
+        widget.xpBoostBtn = widget:getChildById('xpBoostBtn')
 
         widget.icon:setImageSource(skillTuple.icon)
         widget.icon:setTooltip(skillTuple.name)
