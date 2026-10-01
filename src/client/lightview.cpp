@@ -28,9 +28,13 @@
 #include "framework/graphics/painter.h"
 
 LightView::LightView(const Size& size) : m_pool(g_drawPool.get(DrawPoolType::LIGHT)) {
-    g_mainDispatcher.addEvent([this, size] {
-        m_texture = std::make_shared<Texture>(size);
+    m_mapSize = size;
+
+    g_mainDispatcher.addEvent([this] {
+        m_texture = std::make_shared<Texture>(m_mapSize);
         m_texture->setSmooth(true);
+        if (m_texture->getSize() != m_mapSize)
+            m_texture->setupSize(m_mapSize);
     });
 }
 
