@@ -141,7 +141,7 @@ void MapView::drawFloor()
         const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
 
         const auto& map = m_floors[z].cachedVisibleTiles;
-        std::vector<TilePtr> walking_tiles;
+        std::vector<std::pair<TilePtr, uint32_t>> walking_tiles;
 
         for (const auto& tile : map.tiles) {
             uint32_t tileFlags = flags;
@@ -149,14 +149,14 @@ void MapView::drawFloor()
             if (!m_drawViewportEdge && !tile->canRender(tileFlags, cameraPosition, m_viewport))
                 continue;
 
-            walking_tiles.emplace_back(tile);
+            walking_tiles.emplace_back(tile, tileFlags);
 
             // if this tile is the edge or if upper right tile doesn't have walking creatures
             // -> draw it and all walking_tiles depending on it (if there are any queued up)
             TilePtr upper_right_tile = g_map.getTile(tile->getPosition().translated(1, -1, 0));
             if (!upper_right_tile || !upper_right_tile->hasWalkingCreature()) {
                 for (int i = walking_tiles.size() - 1; i >= 0; i--) {
-                    auto const &tile = walking_tiles[i];
+                    const auto& [tile, tileFlags] = walking_tiles[i];
 
                     if (alwaysTransparent) {
                         const bool inRange = tile->getPosition().isInRange(_camera, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange(), true);
@@ -174,14 +174,14 @@ void MapView::drawFloor()
 
         if (!walking_tiles.empty()) {
             for (int i = walking_tiles.size() - 1; i >= 0; i--) {
-                const auto& tile = walking_tiles[i];
+                const auto& [tile, tileFlags] = walking_tiles[i];
 
                 if (alwaysTransparent) {
                     const bool inRange = tile->getPosition().isInRange(_camera, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange(), true);
                     g_drawPool.setOpacity(inRange ? .16 : .7);
                 }
 
-                tile->draw(m_posInfo, transformPositionTo2D(tile->getPosition()), flags);
+                tile->draw(m_posInfo, transformPositionTo2D(tile->getPosition()), tileFlags);
 
                 if (alwaysTransparent)
                     g_drawPool.resetOpacity();
