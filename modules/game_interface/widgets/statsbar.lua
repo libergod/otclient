@@ -1057,6 +1057,12 @@ end
 -- Initialize proficiency top bar widget
 function StatsBar.initProficiencyTopBar()
     if not g_game.getFeature(GameProficiency) then
+        for _, bar in ipairs(StatsBar.getAllStatsBarWithPosition()) do
+            local profWidget = bar:recursiveGetChildById('proficiencyTopBar')
+            if profWidget then
+                profWidget:setVisible(false)
+            end
+        end
         return
     end
     local statsBar = StatsBar.getCurrentStatsBarWithPosition()
