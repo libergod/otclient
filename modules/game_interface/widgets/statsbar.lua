@@ -30,7 +30,8 @@ local statsBarsDimensions = {
     }
 }
 
-local firstCall = true
+local DEFAULT_DIMENSION = "compact"
+local DEFAULT_PLACEMENT = "top"
 
 local isWarriorVocation = false
 
@@ -802,6 +803,15 @@ function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
     StatsBar.reloadCurrentStatsBarQuickInfo()
 end
 
+-- Keeps the stats bar selectors on the options panel in sync with the state
+-- that is currently applied. Always called with valid values, never with nil,
+-- so the combobox handlers never read an empty selection back.
+local function syncStatsBarSelectors()
+    if modules.game_healthcircle and modules.game_healthcircle.setStatsBarOption then
+        modules.game_healthcircle.setStatsBarOption(currentStats.dimension, currentStats.placement)
+    end
+end
+
 function constructStatsBar(dimension, placement)
     local dimensionString = dimension:gsub("^%u", string.lower)
     StatsBar.updateCurrentStats(dimensionString, placement)
@@ -824,7 +834,7 @@ function constructStatsBar(dimension, placement)
         reloadSkillsTab(statsBar[dimensionOnPlacement].skills, statsBar[dimensionOnPlacement])
         StatsBar.reloadCurrentStatsBarQuickInfo()
 
-        modules.game_healthcircle.setStatsBarOption()
+        syncStatsBarSelectors()
 
         StatsBar.initProficiencyTopBar()
     else
@@ -833,10 +843,17 @@ function constructStatsBar(dimension, placement)
 end
 
 function StatsBar.updateCurrentStats(dimension, placement)
-    currentStats = {
-        dimension = dimension,
-        placement = placement
-    }
+    if dimension then
+        currentStats.dimension = dimension
+    end
+
+    if placement then
+        currentStats.placement = placement
+    end
+
+    -- Persist immediately, the in-memory state is never re-read from the
+    -- settings on a change request, so it can't be rolled back by a later load.
+    StatsBar.saveSettings()
 end
 
 local function openDropMenu(mousePos)
@@ -876,8 +893,7 @@ local function openDropMenu(mousePos)
 
     menu:addSeparator()
     menu:addOption(tr('Hide Customisable Status Bars'), function()
-        StatsBar.hideAll()
-        modules.game_healthcircle.setStatsBarOption("hide")
+        StatsBar.updateStatsBarOption('hide', currentStats.placement)
     end)
 
     menu:display(mousePos)
@@ -931,7 +947,7 @@ local function onStatsMousePress(tab, mousePos, mouseButton)
 end
 
 function StatsBar.reloadCurrentTab()
-    if currentStats.dimension == "hide" then
+    if currentStats.dimension == "hide" or currentStats.placement == "hide" then
         return
     end
 
@@ -945,13 +961,22 @@ function StatsBar.reloadCurrentTab()
     end
 end
 
-function StatsBar.updateStatsBarOption(dimension)
-    StatsBar.hideAll()
-    StatsBar.firstLoadSettings()
-
-    if currentStats.dimension ~= "hide" and dimension ~= "hide" then
-        StatsBar.reloadCurrentTab()
+-- Applies a dimension/placement request. The in-memory state is the source of
+-- truth, it is persisted right away (same behaviour as client_options setOption)
+-- and never re-read from the settings, so a change request can't be discarded.
+function StatsBar.updateStatsBarOption(dimension, placement)
+    if dimension or placement then
+        StatsBar.updateCurrentStats(dimension, placement)
     end
+
+    StatsBar.hideAll()
+
+    if currentStats.dimension == "hide" or currentStats.placement == "hide" then
+        syncStatsBarSelectors()
+        return
+    end
+
+    StatsBar.reloadCurrentTab()
 end
 
 local function getSettingOrDefault(setting, default)
@@ -963,28 +988,43 @@ local function setSetting(setting, value)
     g_settings.set(setting, value)
 end
 
+local function isValidDimension(dimension)
+    if dimension == "hide" then
+        return true
+    end
+    return statsBarsDimensions[dimension:gsub("^%l", string.upper)] ~= nil
+end
+
+local function isValidPlacement(placement)
+    for _, knownPlacement in ipairs(statsBarsPlacements) do
+        if placement == knownPlacement:lower() then
+            return true
+        end
+    end
+    return false
+end
+
 function StatsBar.loadSettings()
+    local dimension = getSettingOrDefault('statsbar_dimension', DEFAULT_DIMENSION)
+    local placement = getSettingOrDefault('statsbar_placement', DEFAULT_PLACEMENT)
+
+    -- fall back to the defaults when the stored values are not known anymore
+    if not isValidDimension(dimension) then
+        dimension = DEFAULT_DIMENSION
+    end
+    if not isValidPlacement(placement) then
+        placement = DEFAULT_PLACEMENT
+    end
+
     currentStats = {
-        dimension = getSettingOrDefault('statsbar_dimension', "compact"),
-        placement = getSettingOrDefault('statsbar_placement', "top")
+        dimension = dimension,
+        placement = placement
     }
 end
 
 function StatsBar.saveSettings()
     setSetting('statsbar_dimension', currentStats.dimension)
     setSetting('statsbar_placement', currentStats.placement)
-end
-
-function StatsBar.firstLoadSettings()
-    if firstCall then
-        currentStats.dimension = getSettingOrDefault("statsbar_dimension", "compact")
-        currentStats.placement = getSettingOrDefault("statsbar_placement", "top")
-
-        firstCall = false
-    end
-
-    StatsBar.saveSettings()
-    StatsBar.loadSettings()
 end
 
 function StatsBar.OnGameEnd()
@@ -1000,8 +1040,8 @@ end
 function StatsBar.OnGameStart()
     StatsBar.loadSettings()
     StatsBar.reloadCurrentTab()
-    modules.game_healthcircle.setStatsBarOption()
-    
+    syncStatsBarSelectors()
+
     -- Initialize proficiency topbar widget
     StatsBar.initProficiencyTopBar()
 end
