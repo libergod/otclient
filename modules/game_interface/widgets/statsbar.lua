@@ -30,6 +30,44 @@ local statsBarsDimensions = {
     }
 }
 
+-- Geometry of each stats bar layout that depends on the GameProficiency feature.
+-- `on` mirrors 30-statsbar.otui; `off` closes the gap left by the hidden proficiency
+-- Supported properties: right (anchor right edge to <id>.left), marginLeft, marginRight, width.
+local proficiencyLayouts = {
+    largeOnTop = {
+        on  = { health = { right = 'proficiencyIcon' }, icons = { width = 52 } },
+        off = { health = { right = 'icons' },           icons = { width = 75 } }
+    },
+    largeOnBottom = {
+        on  = { health = { right = 'proficiencyIcon' } },
+        off = { health = { right = 'icons' } }
+    },
+    compactOnTop = {
+        on  = { health = { right = 'proficiencyTopBar', marginRight = 6 }, icons = { marginLeft = 57 } },
+        off = { health = { right = 'icons', marginRight = 3 },             icons = { marginLeft = 0 } }
+    },
+    compactOnBottom = {
+        on  = { health = { right = 'proficiencyTopBar', marginRight = 7 }, icons = { marginLeft = 57 } },
+        off = { health = { right = 'icons', marginRight = 7 },             icons = { marginLeft = 0 } }
+    },
+    parallelOnTop = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    parallelOnBottom = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    defaultOnTop = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    defaultOnBottom = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    }
+}
+
 local DEFAULT_DIMENSION = "compact"
 local DEFAULT_PLACEMENT = "top"
 
@@ -1054,23 +1092,51 @@ function StatsBar.OnGameStart()
     StatsBar.initProficiencyTopBar()
 end
 
--- Initialize proficiency top bar widget
-function StatsBar.initProficiencyTopBar()
-    if not g_game.getFeature(GameProficiency) then
-        for _, bar in ipairs(StatsBar.getAllStatsBarWithPosition()) do
-            local profWidget = bar:recursiveGetChildById('proficiencyTopBar')
-            if profWidget then
-                profWidget:setVisible(false)
-            end
-        end
+local function applyProficiencyLayout(bar, enabled)
+    local layout = proficiencyLayouts[bar:getId()]
+    if not layout then
         return
     end
-    local statsBar = StatsBar.getCurrentStatsBarWithPosition()
-    if not statsBar then return end
-    
-    local profWidget = statsBar:recursiveGetChildById('proficiencyTopBar')
-    if profWidget then
-        profWidget:setVisible(true)
+
+    for widgetId, props in pairs(enabled and layout.on or layout.off) do
+        local widget = bar:getChildById(widgetId)
+        if widget then
+            if props.right then
+                widget:addAnchor(AnchorRight, props.right, AnchorLeft)
+            end
+            if props.marginLeft then
+                widget:setMarginLeft(props.marginLeft)
+            end
+            if props.marginRight then
+                widget:setMarginRight(props.marginRight)
+            end
+            if props.width then
+                widget:setWidth(props.width)
+            end
+        end
+    end
+end
+
+-- Initialize proficiency top bar widget
+function StatsBar.initProficiencyTopBar()
+    local enabled = g_game.getFeature(GameProficiency)
+    local currentBar = StatsBar.getCurrentStatsBarWithPosition()
+
+    for _, bar in ipairs(StatsBar.getAllStatsBarWithPosition()) do
+        local profWidget = bar:getChildById('proficiencyTopBar')
+        if profWidget then
+            profWidget:setVisible(enabled and bar == currentBar)
+        end
+
+        local proficiencyIcon = bar:getChildById('proficiencyIcon')
+        if proficiencyIcon then
+            proficiencyIcon:setVisible(enabled)
+        end
+
+        applyProficiencyLayout(bar, enabled)
+    end
+
+    if enabled and currentBar and modules.game_proficiency then
         modules.game_proficiency.updateTopBarProficiency()
     end
 end
