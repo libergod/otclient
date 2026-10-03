@@ -139,12 +139,13 @@ MainWindowHigh
       text-align: center
       text-wrap: true
       border-color: #00000077
-      height: 38
-      width: 370
+      height: 45
+      width: 420
       anchors.top: parent.top
       anchors.left: parent.left
-      margin-top: 60
-      margin-left: 110
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 58
+      margin-left: 33
       font: $var-cip-font-new
       phantom: true
       color: #c0c0c0
@@ -466,7 +467,8 @@ MainWindowHigh
     Label
       id: statusText
       anchors.fill: parent
-      margin: 1
+      margin-top: -5
+      margin-left: -3
       text-align: topLeft
       text-wrap: true
       font: $var-cip-font-new

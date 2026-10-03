@@ -21,7 +21,7 @@ local ButtonRewardWall, windowsPickWindow, generalBox
 local bonuses = {}
 local actualUsed = {}
 local bonusShrine = 0
-local DAILY_REWARD_CYCLE = 72000
+local DAILY_REWARD_CYCLE = 86400
 local dailyRewardSlotTimerEvent, dailyRewardSlotTimerData, restingAreaTimerEvent, restingAreaTimerData
 local claimPending = false
 local claimCloseResetEvent
@@ -92,8 +92,20 @@ local function getClaimUsedToken()
 	return 1
 end
 
+local function getSelectedRewardItems()
+	local selected = {}
+
+	for itemId, count in pairs(actualUsed) do
+		if count and count > 0 then
+			selected[itemId] = count
+		end
+	end
+
+	return selected
+end
+
 local function claimInstantDailyReward()
-	g_game.requestGetRewardDaily(getClaimUsedToken(), actualUsed)
+	g_game.requestGetRewardDaily(getClaimUsedToken(), getSelectedRewardItems())
 
 	generalBox, windowsPickWindow = destroyWindows({
 		generalBox,
@@ -390,6 +402,15 @@ local function visibleHistory(bool)
 			break
 		end
 	end
+end
+
+local function resetHistoryView()
+	if not rewardWallController.ui or not rewardWallController.ui.historyPanel:isVisible() then
+		return
+	end
+
+	visibleHistory(false)
+	rewardWallController.ui.footerPanel.historyButton:setText("History")
 end
 
 local REWARD_CONTAINER_ACTIVE = "/game_rewardwall/images/container-bonus-active"
@@ -775,15 +796,19 @@ local function checkRewards(data)
 end
 
 local function onDailyRewardCollectionState(state)
-	if not rewardWallController.ui:isVisible() then
+	if not rewardWallController.ui then
 		return
 	end
 
 	local text = {
-		[DailyRewardStatus.DAILY_REWARD_COLLECTED] = "you did not claim your daily reward in time. too bad, you do not have enough Daily Reward Jokers.",
-		[DailyRewardStatus.DAILY_REWARD_NOTCOLLECTED] = "You did not claim your daily reward in time. If you don't claim your reward now, your [color=#D33C3C]streak will be reset.[/color]",
-		[DailyRewardStatus.DAILY_REWARD_NOTAVAILABLE] = "idk"
+		[DailyRewardStatus.DAILY_REWARD_COLLECTED] = "You already claimed your daily reward.",
+		[DailyRewardStatus.DAILY_REWARD_NOTCOLLECTED] = "You did not claim your daily reward in time.\n If you don't claim your reward now, your [color=#D33C3C]streak will be reset[/color].",
+		[DailyRewardStatus.DAILY_REWARD_NOTAVAILABLE] = "Your daily reward is currently not available."
 	}
+
+	if not text[state] then
+		return
+	end
 
 	rewardWallController.ui.restingAreaPanel.streakWarning:parseColoredText(text[state], "#c0c0c0")
 end
@@ -966,6 +991,7 @@ function hide(bool)
 
 	stopDailyRewardSlotTimer()
 	stopRestingAreaTimer()
+	resetHistoryView()
 	rewardWallController.ui:hide()
 
 	if bool then
@@ -1196,6 +1222,7 @@ function rewardWallController:onGameEnd()
 	end
 
 	claimPending = false
+	resetHistoryView()
 
 	if rewardWallController.ui:isVisible() then
 		rewardWallController.ui:hide()
@@ -1331,9 +1358,9 @@ function rewardWallController:onhoverStatusPlayer(event)
 	end
 
 	local playerStatus = {
-		rewardStreakIcon = "This explains the reward streak system. You need to claim your daily reward between regular server saves to maintain your streak. At a streak of 2+, your character gets resting area bonuses. Free accounts can reach a maximum bonus at streak level 3, while premium players can reach higher levels. Characters on the same account share the streak.",
+		rewardStreakIcon = "This is your reward streak. As long as you claim your daily reward once between two regular server saves, your reward streak keeps rising. If you have reached a reward streak of at least 2, your character will benefit from bonuses in resting areas. Characters on free accounts reach the maximum bonus at a reward streak of 3. Premium players with a reward streak of 7 or higher will benefit from the best bonuses in resting areas.",
 		timeLeft = "This is an urgent notification to claim your daily reward within one minute (before the next server save) to raise your reward streak by 1. It mentions that 3 Daily Reward Jokers will be used to prevent resetting your streak. It also encourages raising your streak to benefit from bonuses in resting areas.",
-		restingAreaGold = "This explains how Daily Reward Jokers work. They help you maintain your streak on days when you can't claim your daily reward. Each character receives one Daily Reward Joker on the first day of each month. The message recommends collecting rewards daily to stay safe."
+		restingAreaGold = "Daily Reward Jokers help you to keep your reward streak. If there is a day on which your're unable to claim your daily reward, you can use a joker to continue your streak. The more jokers you have, the more days you can cover. \nEvery Character will receive a Daily Reward Joker on the first day of each month. Characters can have up to 3 jokers. \nTo be on the safe side, remember to collect your reward on a daily basis."
 	}
 	local DEFAULT_MESSAGE = "Unknown bonus."
 	local id = event.target:getId()
@@ -1412,7 +1439,7 @@ function rewardWallController:onhoverStatusReward(event)
 end
 
 function onClickBtnOk()
-	if table.empty(actualUsed) or claimPending then
+	if table.empty(getSelectedRewardItems()) or claimPending then
 		return
 	end
 

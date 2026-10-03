@@ -65,7 +65,7 @@ MainWindowHigh
     anchors.right: parent.right
     anchors.top: rewardList.bottom
     margin-top: 6
-    margin-right: 36
+    margin-right: 5
     text: Total weight: 0.00 oz
 
   HorizontalSeparator
