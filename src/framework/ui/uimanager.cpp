@@ -709,7 +709,7 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         sstream.write(&data[0], data.length());
         sstream.seekg(0, std::ios::beg);
         const OTMLDocumentPtr doc = OTMLDocument::parse(sstream, "(string)", m_globalAliases);
-        UIWidgetPtr widget;
+        OTMLNodePtr widgetNode;
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();
 
@@ -720,13 +720,15 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
             if (tag.find('<') != std::string::npos)
                 importStyleFromOTML(node);
             else {
-                if (widget)
+                if (widgetNode)
                     throw Exception("cannot have multiple main widgets in otui files");
-                widget = createWidgetFromOTML(node, parent);
+                widgetNode = node;
             }
         }
         registerGlobalAliases(doc);
-
+        UIWidgetPtr widget;
+        if (widgetNode)
+            widget = createWidgetFromOTML(widgetNode, parent);
         return widget;
     } catch (stdext::exception& e) {
         g_logger.error("Failed to load UI from string: {}", e.what());

@@ -25,6 +25,7 @@ local DAILY_REWARD_CYCLE = 86400
 local dailyRewardSlotTimerEvent, dailyRewardSlotTimerData, restingAreaTimerEvent, restingAreaTimerData
 local claimPending = false
 local claimCloseResetEvent
+local serverErrorConnected = false
 local COLORS = {
 	BASE_1 = "#484848",
 	BASE_2 = "#414141"
@@ -868,15 +869,27 @@ local function onServerError(code, error)
 end
 
 local function connectOnServerError()
+	if serverErrorConnected then
+		return
+	end
+
 	connect(g_game, {
 		onServerError = onServerError
 	})
+
+	serverErrorConnected = true
 end
 
 local function disconnectOnServerError()
+	if not serverErrorConnected then
+		return
+	end
+
 	disconnect(g_game, {
 		onServerError = onServerError
 	})
+
+	serverErrorConnected = false
 end
 
 local function onCloseRewardWall()
@@ -892,6 +905,10 @@ local function onCloseRewardWall()
 
 			if claimPending then
 				claimPending = false
+			end
+
+			if not rewardWallController.ui:isVisible() then
+				disconnectOnServerError()
 			end
 		end, 2000)
 
@@ -1214,6 +1231,7 @@ end
 function rewardWallController:onGameEnd()
 	stopDailyRewardSlotTimer()
 	stopRestingAreaTimer()
+	disconnectOnServerError()
 
 	if claimCloseResetEvent then
 		removeEvent(claimCloseResetEvent)
@@ -1454,6 +1472,7 @@ function destroyPickReward(bool)
 	windowsPickWindow = destroyWindows(windowsPickWindow)
 
 	if bool then
+		g_game.sendOpenRewardWall()
 		rewardWallController.ui:show()
 		rewardWallController.ui:raise()
         rewardWallController.ui:focus()

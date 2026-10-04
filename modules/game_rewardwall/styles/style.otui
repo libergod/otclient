@@ -54,7 +54,7 @@ PickRewardQtyButton < UIButton
   image-source: /game_rewardwall/images/buttons_pick_rewards
   image-size: 16 16
   image-auto-resize: false
-  focusable: false
+  focusable: true
 
 PickRewardQtyButtonBackAll < PickRewardQtyButton
   image-clip: 0 32 16 16
