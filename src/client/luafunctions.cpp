@@ -142,6 +142,15 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSpriteToFile", &SpriteAppearances::saveSpriteToFile, &g_spriteAppearances);
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSheetToFileBySprite", &SpriteAppearances::saveSheetToFileBySprite, &g_spriteAppearances);
 
+    g_lua.bindGlobalFunction("setDrawViewportEdge", [](const bool force) {
+        if (const auto& mapWidget = g_client.getMapWidget())
+            mapWidget->setDrawViewportEdge(force);
+    });
+    g_lua.bindGlobalFunction("isDrawingViewportEdge", [] {
+        const auto& mapWidget = g_client.getMapWidget();
+        return mapWidget && mapWidget->isDrawingViewportEdge();
+    });
+
     g_lua.registerSingletonClass("g_map");
     g_lua.bindSingletonFunction("g_map", "isLookPossible", &Map::isLookPossible, &g_map);
     g_lua.bindSingletonFunction("g_map", "addThing", &Map::addThing, &g_map);
@@ -1270,6 +1279,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIProgressRect>("showProgress", &UIProgressRect::showProgress);
     g_lua.bindClassMemberFunction<UIProgressRect>("getTimeElapsed", &UIProgressRect::getTimeElapsed);
     g_lua.bindClassMemberFunction<UIProgressRect>("getDuration", &UIProgressRect::getDuration);
+    g_lua.bindClassMemberFunction<UIProgressRect>("setPercentReverse", &UIProgressRect::setPercentReverse);
+    g_lua.bindClassMemberFunction<UIProgressRect>("isPercentReverse", &UIProgressRect::isPercentReverse);
 
     g_lua.registerClass<UIGraph, UIWidget>();
     g_lua.bindClassStaticFunction<UIGraph>("create", [] { return std::make_shared<UIGraph>(); });
