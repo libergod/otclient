@@ -19,6 +19,7 @@ local ClientPackets = {
 }
 local ButtonRewardWall, windowsPickWindow, generalBox
 local bonuses = {}
+local rewardStreakLevel = 0
 local actualUsed = {}
 local bonusShrine = 0
 local DAILY_REWARD_CYCLE = 86400
@@ -123,13 +124,13 @@ local function premiumStatusWindwos(isPremium)
 end
 
 local function updateRestingAreaBonusIcons(dayStreakLevel)
+	rewardStreakLevel = dayStreakLevel or 0
+
 	local bonusIcons = rewardWallController.ui and rewardWallController.ui.restingAreaPanel and rewardWallController.ui.restingAreaPanel.bonusIcons
 
 	if not bonusIcons then
 		return
 	end
-
-	dayStreakLevel = dayStreakLevel or 0
 
 	for i = 1, 6 do
 		local widget = bonusIcons:getChildById("bonusIcon" .. i)
@@ -139,7 +140,7 @@ local function updateRestingAreaBonusIcons(dayStreakLevel)
 		end
 
 		local requiredStreak = i + 1
-		local locked = dayStreakLevel < requiredStreak
+		local locked = rewardStreakLevel < requiredStreak
 		local dither = widget.ditherpattern or widget:getChildById("ditherpattern")
 
 		if dither then
@@ -1356,12 +1357,16 @@ function rewardWallController:onhoverBonus(event)
 	end
 
 	local isPremium = g_game.getLocalPlayer():isPremium()
+	local requiresPremium = bonus.name ~= "Hit Point Regeneration" and bonus.name ~= "Mana Regeneration"
+	local isLocked = rewardStreakLevel < bonus.id or (requiresPremium and not isPremium)
+	local lockedTitle = isLocked and "[color=#ff0000](Locked)[/color]" or ""
+	local activeBonuses = isPremium and not isLocked and ("\n\nActive bonuses: %s."):format(getBonusStrings(bonuses)) or ""
 	local bonusText = ""
 
-	if bonus.name == "Hit Point Regeneration" or bonus.name == "Mana Regeneration" then
-		bonusText = string.format("%s %s\nThis bonus is active if you reached a reward streak of at least [color=#44AD25]%d[/color].%s", bonus.name, isPremium and "" or "[color=#ff0000](Locked)[/color]", bonus.id, isPremium and ("\n\nActive bonuses: %s."):format(getBonusStrings(bonuses)) or "")
+	if not requiresPremium then
+		bonusText = string.format("%s %s\nThis bonus is active if you reached a reward streak of at least [color=#44AD25]%d[/color].%s", bonus.name, lockedTitle, bonus.id, activeBonuses)
 	else
-		bonusText = string.format("%s %s\nThis bonus is active if you are [color=%s]Premium[/color] and reached a reward streak of at least [color=#44AD25]%d[/color].%s", bonus.name, isPremium and "" or "[color=#ff0000](Locked)[/color]", isPremium and "#44AD25" or "#ff0000", bonus.id, isPremium and ("\n\nActive bonuses: %s."):format(getBonusStrings(bonuses)) or "")
+		bonusText = string.format("%s %s\nThis bonus is active if you are [color=%s]Premium[/color] and reached a reward streak of at least [color=#44AD25]%d[/color].%s", bonus.name, lockedTitle, isPremium and "#44AD25" or "#ff0000", bonus.id, activeBonuses)
 	end
 
 
