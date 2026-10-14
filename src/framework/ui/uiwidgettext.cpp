@@ -177,6 +177,7 @@ void UIWidget::updateText()
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
         const auto& wrapOptions = getTextWrapOptions();
+        m_textWrapWidth = getWidth();
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, wrapOptions, &m_drawTextColors);
         else
@@ -204,7 +205,15 @@ void UIWidget::updateText()
         if (size.height() <= 0 || hasProp(PropTextVerticalAutoResize))
             size.setHeight(textBoxSize.height());
 
+        const int prevHeight = getHeight();
         setSize(size);
+
+        // A text re-wrap at its final width changes the line count after the
+        // content-sized ancestors were measured; let them re-measure.
+        if (getHeight() != prevHeight && isOnHtml() && m_parent && m_htmlNode
+            && m_htmlNode->getType() == NodeType::Text
+            && (m_parent->getWidthHtml().unit != Unit::FitContent || m_parent->getDisplay() == DisplayType::TableCell))
+            invalidateHtmlAncestorsHeight();
     }
 
     m_textCachedScreenCoords = {};
