@@ -218,9 +218,17 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
             }
         }
         if (getMargin || getCenterPos) {
+            // Only siblings on the first line box shift the centered start;
+            // later lines are positioned independently once the run wraps.
+            const int lineAvail = std::max<int>(0, parentWidget->getWidth() - parentWidget->getPaddingLeft() - parentWidget->getPaddingRight());
+            int lineW = widget->getWidth() + widget->getMarginLeft() + widget->getMarginRight();
             for (auto p = widget->getNextWidget(); p && p->isAnchorable() && p->getPositionType() != PositionType::Absolute && isInlineish(p.get()); p = p->getNextWidget()) {
+                const int pw = p->getWidth() + p->getMarginLeft() + p->getPaddingLeft() + p->getPaddingRight();
+                if (lineAvail > 0 && lineW + pw > lineAvail)
+                    break;
+                lineW += pw;
                 if (getCenterPos)
-                    ajustCenterPos += p->getWidth() + p->getMarginLeft() + p->getPaddingLeft() + p->getPaddingRight();
+                    ajustCenterPos += pw;
 
                 if (getMargin && p->getDisplay() == DisplayType::InlineBlock)
                     realMarginTop = std::max<int>(realMarginTop, p->getMarginTop());
