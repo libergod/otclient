@@ -1964,8 +1964,42 @@ void UIWidget::applyAnchorAlignment() {
     if (m_parent && m_parent->getDisplay() == DisplayType::TableCell) {
         const auto ta = resolveCellTextAlign(this);
         const auto va = resolveCellVerticalAlign(this);
-        anchorHorizontalInCell(this, ta);
-        anchorVerticalInCell(this, va);
+
+        // A cell with several in-flow children must stack them like block
+        // flow; anchoring each child to the cell edges would overlap them.
+        const FlowContext cellCtx = computeFlowContext(this, DisplayType::TableCell, FloatType::None);
+        UIWidget* prev = cellCtx.lastNormalWidget;
+        bool hasNext = false;
+        bool afterSelf = false;
+        for (const auto& sp : m_parent->getChildrenRef()) {
+            UIWidget* c = sp.get();
+            if (c == this) { afterSelf = true; continue; }
+            if (afterSelf && !skipInFlow(c) && mapLogicalFloat(c->getFloat()) == FloatType::None) {
+                hasNext = true;
+                break;
+            }
+        }
+
+        if (!prev && !hasNext) {
+            anchorHorizontalInCell(this, ta);
+            anchorVerticalInCell(this, va);
+            return;
+        }
+
+        const bool inlineRun = prev && isInlineLike(m_displayType) && isInlineLike(prev->getDisplay());
+        if (inlineRun)
+            addAnchor(Fw::AnchorLeft, prev->getId().c_str(), Fw::AnchorRight);
+        else
+            anchorHorizontalInCell(this, ta);
+
+        // Stacked content is top-aligned; middle/bottom alignment of a group
+        // cannot be expressed with per-child anchors.
+        if (!prev)
+            addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+        else if (inlineRun)
+            addAnchor(Fw::AnchorTop, prev->getId().c_str(), Fw::AnchorTop);
+        else
+            addAnchor(Fw::AnchorTop, prev->getId().c_str(), Fw::AnchorBottom);
         return;
     }
 
