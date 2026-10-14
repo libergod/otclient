@@ -248,6 +248,11 @@ void UIWidget::setImageSource(const std::string_view source, const bool base64)
         if (size.height() <= 0 || hasProp(PropImageAutoResize))
             size.setHeight(imageSize.height());
 
-        setSize(size);
+        // Remote HTML images arrive after layout; ancestors must re-measure the new intrinsic size.
+        if (setRect(Rect(m_rect.topLeft(), size)) && isOnHtml()) {
+            for (auto parent = m_parent; parent && parent->isOnHtml(); parent = parent->m_parent)
+                parent->scheduleHtmlTask(PropUpdateSize);
+            refreshHtml(true);
+        }
     }
 }
