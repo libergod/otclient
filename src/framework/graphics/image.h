@@ -32,6 +32,8 @@ public:
     static ImagePtr load(const std::string& file);
     static ImagePtr loadPNG(const char* data, size_t size);
     static ImagePtr loadPNG(const std::string& file);
+    // Decodes a JPEG buffer (RGBA); returns nullptr when the data is not a JPEG.
+    static ImagePtr loadJPEG(const char* data, size_t size);
     static ImagePtr fromQRCode(const std::string& code, int border);
 
     void savePNG(const std::string& fileName);

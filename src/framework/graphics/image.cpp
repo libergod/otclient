@@ -26,6 +26,13 @@
 #include "framework/core/filestream.h"
 #include "framework/core/resourcemanager.h"
 
+#define STB_IMAGE_STATIC
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_JPEG
+#define STBI_NO_STDIO
+#define STBI_MAX_DIMENSIONS 8192
+#include <stb_image.h>
+
 using namespace qrcodegen;
 
 Image::Image(const Size& size, const int bpp, const uint8_t* pixels) : m_size(size), m_bpp(bpp)
@@ -72,6 +79,9 @@ ImagePtr Image::loadPNG(const char* data, const size_t size)
     }
 
     if (!image)
+        image = loadJPEG(data, size);
+
+    if (!image)
         return nullptr;
 
     int cntTransparentPixel = 0;
@@ -82,6 +92,31 @@ ImagePtr Image::loadPNG(const char* data, const size_t size)
         }
     }
 
+    return image;
+}
+
+ImagePtr Image::loadJPEG(const char* data, const size_t size)
+{
+    const auto* bytes = reinterpret_cast<const unsigned char*>(data);
+    if (!data || size < 3 || size > static_cast<size_t>(std::numeric_limits<int>::max())
+        || bytes[0] != 0xFF || bytes[1] != 0xD8 || bytes[2] != 0xFF)
+        return nullptr;
+
+    int width = 0, height = 0, channels = 0;
+    // Reject huge images from the header before allocating the decoded buffer.
+    constexpr int64_t kMaxPixels = 4096 * 4096;
+    if (!stbi_info_from_memory(bytes, static_cast<int>(size), &width, &height, &channels)
+        || width <= 0 || height <= 0 || static_cast<int64_t>(width) * height > kMaxPixels)
+        return nullptr;
+
+    unsigned char* pixels = stbi_load_from_memory(bytes, static_cast<int>(size), &width, &height, &channels, 4);
+    if (!pixels)
+        return nullptr;
+
+    ImagePtr image;
+    if (width > 0 && height > 0)
+        image = std::make_shared<Image>(Size(width, height), 4, pixels);
+    stbi_image_free(pixels);
     return image;
 }
 
