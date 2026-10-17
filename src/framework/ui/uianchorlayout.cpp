@@ -236,6 +236,45 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
         }
     }
 
+    // Inline items continuing a line box are centered on their predecessor
+    // (see UIWidget::applyAnchorAlignment). Push the line leader down so the
+    // tallest item of the line starts at the line top and the rest center on it.
+    int lineCenterOffset = 0;
+    if (widget->isOnHtml() && isInlineish(widget.get())) {
+        const auto continuesLine = [this](const UIWidgetPtr& w, const std::string& prevId) {
+            const auto it = m_anchorsGroups.find(w);
+            if (it == m_anchorsGroups.end())
+                return false;
+            for (const auto& a : it->second->getAnchors()) {
+                if (a->getAnchoredEdge() == Fw::AnchorVerticalCenter && a->getHookedEdge() == Fw::AnchorVerticalCenter && a->getHookdWidgetId() == prevId)
+                    return true;
+            }
+            return false;
+        };
+
+        bool isLeader = true;
+        for (const auto& a : anchorGroup->getAnchors()) {
+            if (a->getAnchoredEdge() == Fw::AnchorVerticalCenter) {
+                isLeader = false;
+                break;
+            }
+        }
+
+        if (isLeader) {
+            const int ownH = widget->getHeight();
+            int maxH = ownH;
+            std::string lastId = widget->getId();
+            for (auto p = widget->getNextWidget(); p; p = p->getNextWidget()) {
+                if (continuesLine(p, lastId)) {
+                    maxH = std::max<int>(maxH, p->getHeight());
+                    lastId = p->getId();
+                } else if (p->getPositionType() != PositionType::Absolute && p->getFloat() == FloatType::None && p->isVisible())
+                    break;
+            }
+            lineCenterOffset = std::max<int>(0, (maxH - ownH) / 2);
+        }
+    }
+
     const auto& virtualParentWidget = widget->getPositionType() == PositionType::Absolute ? widget->getVirtualParent() : nullptr;
 
     // calculates new rect based on anchors
@@ -354,6 +393,7 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
 
                     if (isInlineish(widget.get())) {
                         margin += widget->getLineHeight().valueCalculed - hookedWidget->getLineHeight().valueCalculed;
+                        margin += lineCenterOffset;
                     }
 
                     if (widget->getPositionType() == PositionType::Relative || widget->getPositionType() == PositionType::Absolute) {

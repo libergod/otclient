@@ -259,6 +259,23 @@ namespace {
         return false;
     }
 
+    // Widest fixed-size (px) descendant: content a table column cannot shrink
+    // below without overlapping its neighbour (images, px-wide tables).
+    int fixedMinContentWidth(UIWidget* w, int depth = 0) {
+        if (!w || depth > 32 || !w->isExplicitlyVisible())
+            return 0;
+
+        const int marginX = std::max(0, w->getMarginLeft()) + std::max(0, w->getMarginRight());
+        const auto& width = w->getWidthHtml();
+        if (width.unit == Unit::Px)
+            return std::max(0, width.value) + marginX;
+
+        int widest = 0;
+        for (const auto& c : w->getChildrenRef())
+            widest = std::max(widest, fixedMinContentWidth(c.get(), depth + 1));
+        return widest > 0 ? widest + marginX + w->getPaddingLeft() + w->getPaddingRight() : 0;
+    }
+
     // Simulates width-based line breaking for the inline run that ends at
     // `self`. Returns true when `self` starts a new line and sets `lineAbove`
     // to the tallest widget of the previous line.
@@ -580,6 +597,7 @@ namespace {
 
         std::vector<int> fixed(cols, -1);
         std::vector<int> perc(cols, 0);
+        std::vector<int> minW(cols, 0);
         std::vector<int> widths(cols, 0);
 
         auto scanRow = [&](UIWidget* r) {
@@ -593,6 +611,12 @@ namespace {
                     fixed[j] = std::max<int>(fixed[j], wSpec.value + cell->getPaddingLeft() + cell->getPaddingRight());
                 } else if (wSpec.unit == Unit::Percent && wSpec.value > 0) {
                     perc[j] = std::max<int>(perc[j], wSpec.value);
+                } else {
+                    int content = 0;
+                    for (const auto& child : cell->getChildrenRef())
+                        content = std::max(content, fixedMinContentWidth(child.get()));
+                    if (content > 0)
+                        minW[j] = std::max<int>(minW[j], content + cell->getPaddingLeft() + cell->getPaddingRight());
                 }
                 if (++j >= cols) break;
             }
@@ -618,6 +642,23 @@ namespace {
             if (perc[i] > 0 && widths[i] == 0) {
                 widths[i] = std::max<int>(0, (innerW * perc[i]) / 100);
                 remaining -= widths[i];
+            }
+        }
+
+        // Auto columns whose fixed-size content (images, px tables) exceeds an
+        // equal share keep that width; the rest share what remains.
+        for (bool changed = true; changed;) {
+            changed = false;
+            int flexLeft = 0;
+            for (int i = 0; i < cols; ++i) if (widths[i] == 0) ++flexLeft;
+            if (flexLeft == 0) break;
+            const int share = std::max<int>(0, remaining / flexLeft);
+            for (int i = 0; i < cols; ++i) {
+                if (widths[i] == 0 && minW[i] > share) {
+                    widths[i] = minW[i];
+                    remaining -= minW[i];
+                    changed = true;
+                }
             }
         }
 
@@ -2201,7 +2242,7 @@ void UIWidget::applyAnchorAlignment() {
         else if (wraps)
             addAnchor(Fw::AnchorTop, lineAbove->getId().c_str(), Fw::AnchorBottom);
         else if (inlineRun)
-            addAnchor(Fw::AnchorTop, prev->getId().c_str(), Fw::AnchorTop);
+            addAnchor(Fw::AnchorVerticalCenter, prev->getId().c_str(), Fw::AnchorVerticalCenter);
         else
             addAnchor(Fw::AnchorTop, prev->getId().c_str(), Fw::AnchorBottom);
         return;
@@ -2293,8 +2334,10 @@ void UIWidget::applyAnchorAlignment() {
             } else if (wrapsLine) {
                 addAnchor(Fw::AnchorTop, lineAbove->getId().c_str(), Fw::AnchorBottom);
             } else {
+                // Items sharing a line box are centered on each other; the line
+                // leader is offset in UIAnchorLayout so the tallest item fits.
                 if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay()))
-                    addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
+                    addAnchor(Fw::AnchorVerticalCenter, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorVerticalCenter);
                 else
                     addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
             }

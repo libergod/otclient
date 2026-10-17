@@ -33,6 +33,7 @@ local newsRequestId = nil
 local otcRequestId = nil
 local otcPageCache = nil
 local contentToken = 0
+local contentLinks = {}
 
 -- /*=============================================
 -- =            Helpers                  =
@@ -133,7 +134,8 @@ local function stripUnsafeAttributes(tag)
 end
 
 -- Remote/bundled content is untrusted: drop scripts, styles and Lua-evaluated attributes.
-local function sanitizeHtml(text)
+-- Valid http(s) links are stored in `links` and the anchor only receives their index.
+local function sanitizeHtml(text, links)
     if type(text) ~= "string" then
         return ""
     end
@@ -153,6 +155,18 @@ local function sanitizeHtml(text)
         return ""
     end)
     text = text:gsub("<[%a][^>]*>", stripUnsafeAttributes)
+    text = text:gsub('<[aA](%s[^>]*)>', function(attrs)
+        local href = attrs:match('%s[hH][rR][eE][fF]="([^"]*)"')
+        attrs = attrs:gsub('%s[hH][rR][eE][fF]="[^"]*"', "")
+        if links and href then
+            href = href:gsub("&amp;", "&"):trim()
+            if href:lower():match("^https?://[^%s\"'<>]+$") then
+                links[#links + 1] = href
+                return string.format('<a%s onclick="self:openContentLink(%d)">', attrs, #links)
+            end
+        end
+        return "<a" .. attrs .. ">"
+    end)
     -- The HTML engine does not draw list markers, so numbers/bullets are added as text.
     text = text:gsub("<[lL][iI]>", "<li>- ")
     text = text:gsub("<[lL][iI](%s[^>]*)>", "<li%1>- ")
@@ -259,7 +273,8 @@ local function renderContent(token, title, message)
         return
     end
 
-    local html = sanitizeHtml(message)
+    contentLinks = {}
+    local html = sanitizeHtml(message, contentLinks)
     if html:trim() == "" then
         contentArea:destroyChildren()
     else
@@ -625,6 +640,13 @@ end
 -- =            Controller                  =
 -- =============================================*/
 
+function compendiumController:openContentLink(index)
+    local url = contentLinks[tonumber(index)]
+    if url then
+        g_platform.openUrl(url)
+    end
+end
+
 function compendiumController:onInit()
     self:loadHtml("game_compendium.html")
     self.ui:hide()
@@ -666,6 +688,7 @@ end
 
 function compendiumController:onTerminate()
     contentToken = contentToken + 1
+    contentLinks = {}
     newsRequestId = cancelRequest(newsRequestId)
     otcRequestId = cancelRequest(otcRequestId)
     destroyCategoryButtons()
@@ -706,82 +729,3 @@ function compendiumController:onGameEnd()
     hide()
     otcRequestId = cancelRequest(otcRequestId)
 end
-
--- __SMOKE_BEGIN__
-scheduleEvent(function()
-    local L = function(...) g_logger.info("[CompendiumTest] " .. string.format(...)) end
-    local function mark(name) L("%s", name); g_resources.writeFileContents("/smoke_mark.txt", name) end
-    if rootWidget.__smoke then return end
-    rootWidget.__smoke = true
-    L("writeDir=%s", g_resources.getWriteDir())
-    show()
-    compendiumController:onGameStart()
-    scheduleEvent(function()
-        local c = compendiumButton:getImageClip()
-        L("toggle size=%dx%d clip off=%d,%d,%d,%d", compendiumButton:getWidth(), compendiumButton:getHeight(), c.x, c.y, c.width, c.height)
-        compendiumButton:setOn(true)
-        scheduleEvent(function()
-            local c2 = compendiumButton:getImageClip()
-            L("toggle clip on=%d,%d,%d,%d", c2.x, c2.y, c2.width, c2.height)
-            compendiumButton:setOn(false)
-        end, 200)
-    end, 300)
-    scheduleEvent(function()
-        local panel = compendiumController:findWidget("#categoryPanel")
-        local pr = panel:getPaddingRect()
-        local parts = {}
-        for _, b in ipairs(panel:getChildren()) do local r = b:getRect(); parts[#parts+1] = string.format("%s[x=%d w=%d]", b:getId(), r.x, r.width) end
-        L("panel rect x=%d w=%d padRect x=%d w=%d | %s", panel:getRect().x, panel:getRect().width, pr.x, pr.width, table.concat(parts, " "))
-        local entryList = compendiumController:findWidget("#entryList")
-        local sb = entryList.verticalScrollBar
-        local buttons = panel:getChildren()
-        local function checkCat(i)
-            if i > #buttons then
-                local ids = { 1, 2, 28, 35, 97, 115 }
-                local function renderNext(j)
-                    if j > #ids then
-                        mark("DONE")
-                        scheduleEvent(function() g_app.exit() end, 2500)
-                        return
-                    end
-                    local entry
-                    for _, e in ipairs(newsData.gamenews) do if e.id == ids[j] then entry = e end end
-                    setContent(entry.headline, entry.message)
-                    scheduleEvent(function()
-                        local area = compendiumController:findWidget("#contentArea")
-                        local ar = area:getPaddingRect()
-                        local count, overflow, fonts, over = 0, 0, {}, {}
-                        local function walk(w)
-                            for _, c in ipairs(w:getChildren()) do
-                                if c:isVisible() then
-                                    count = count + 1
-                                    local r = c:getRect()
-                                    if r.x + r.width > ar.x + ar.width + 2 then overflow = overflow + 1; if #over < 3 then over[#over+1] = string.format("%s(%s)w=%d", c:getId(), c:getStyleName(), r.width) end end
-                                    local t = c:getText()
-                                    if t and #t > 0 then fonts[c:getFont()] = (fonts[c:getFont()] or 0) + 1 end
-                                    walk(c)
-                                end
-                            end
-                        end
-                        walk(area)
-                        local fl = {}
-                        for f, n in pairs(fonts) do fl[#fl+1] = f .. ":" .. n end
-                        L("entry %d '%s' widgets=%d areaW=%d overflowing=%d %s fonts=[%s] scrollMax=%s", ids[j], entry.headline, count, ar.width, overflow, table.concat(over, ","), table.concat(fl, ", "), area.verticalScrollBar and area.verticalScrollBar:getMaximum())
-                        local function dumpW(w, d) if d > 40 then return end; local t = w:getText() or ""; if t:find("Visit depots", 1, true) or t:find("Use training", 1, true) then local r = w:getRect(); local pr = w:getParent():getRect(); local row = w:getParent():getParent(); L("DBG text w=%d h=%d x=%d y=%d | cell disp=%s w=%d h=%d y=%d | row h=%d y=%d | wrap=%s", r.width, r.height, r.x, r.y, tostring(w:getParent():getDisplay()), pr.width, pr.height, pr.y, row:getHeight(), row:getY(), tostring(w:isTextWrap())); local ts = w:getTextSize(); L("DBG ts=%dx%d pad=%d,%d off=%s scale=%s align=%s font=%s", ts.width, ts.height, w:getPaddingLeft(), w:getPaddingRight(), tostring(w:getTextOffset().x), tostring(w.getFontScale and w:getFontScale() or "?"), tostring(w:getTextAlign()), tostring(w:getFont())); local fnt = g_fonts.getFont(w:getFont()); for line in (w:getDrawText() .. "\n"):gmatch("(.-)\n") do L("DBG line [%s] w=%s", line, tostring(fnt and fnt.calculateTextRectSize and fnt:calculateTextRectSize(line).width or "?")) end end; for _, ch in ipairs(w:getChildren()) do dumpW(ch, d + 1) end end; dumpW(area, 0); if CharacterList and CharacterList.hide then pcall(CharacterList.hide) end; if area.verticalScrollBar then area.verticalScrollBar:setValue(420) end; local jj = ids[j]; scheduleEvent(function() mark("SHOT_" .. jj) end, 400)
-                        scheduleEvent(function() renderNext(j + 1) end, 2500)
-                    end, 3000)
-                end
-                renderNext(1)
-                return
-            end
-            categoryRadioGroup:selectWidget(buttons[i])
-            scheduleEvent(function()
-                local visible = 0
-                L("category %s visibleCats=%d scroll min=%s max=%s value=%s listH=%d treeH=%d", buttons[i].categoryId, visible, sb:getMinimum(), sb:getMaximum(), sb:getValue(), entryList:getHeight(), treeView:getHeight())
-                checkCat(i + 1)
-            end, 300)
-        end
-        checkCat(1)
-    end, 1000)
-end, 4000)
--- __SMOKE_END__

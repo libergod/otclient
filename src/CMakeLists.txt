@@ -213,6 +213,7 @@ else()
 endif()
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
+find_package(Stb REQUIRED)
 
 if(APPLE)
   # Required for Physfs
@@ -726,6 +727,7 @@ if(MSVC)
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          ${Stb_INCLUDE_DIR}
   )
   target_link_libraries(otclient_core
           PUBLIC
@@ -784,6 +786,7 @@ elseif(ANDROID)
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          ${Stb_INCLUDE_DIR}
   )
   target_link_libraries(otclient_core
           PUBLIC
@@ -854,6 +857,7 @@ elseif(WASM)
           ${OPENSSL_INCLUDE_DIR}
           ${BROWSER_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          ${Stb_INCLUDE_DIR}
   )
   target_link_libraries(otclient_core
           PUBLIC
@@ -982,6 +986,7 @@ else() # Linux
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          ${Stb_INCLUDE_DIR}
   )
   target_link_libraries(otclient_core
           PUBLIC

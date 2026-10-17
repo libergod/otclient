@@ -59,6 +59,41 @@ namespace {
         }
     }
 
+    bool isHtmlSpace(const char c) {
+        return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
+    }
+
+    bool isInlineHtmlNode(const HtmlNodePtr& node) {
+        if (!node)
+            return false;
+        if (node->getType() == NodeType::Text)
+            return true;
+        if (node->getType() != NodeType::Element)
+            return false;
+        const auto display = node->getStyle("display");
+        return display.empty() || display.starts_with("inline");
+    }
+
+    // A collapsible space at the edge of a text fragment separates it from
+    // adjacent inline content (`click <em>Add</em> to`), so it must survive
+    // trimming when the neighbouring sibling is inline.
+    std::pair<bool, bool> inlineEdgeSpaces(const HtmlNodePtr& node, const std::string& text) {
+        if (!node || text.empty())
+            return { false, false };
+        const auto parent = node->getParent();
+        if (!parent)
+            return { false, false };
+
+        const auto& siblings = parent->getChildren();
+        const auto it = std::find(siblings.begin(), siblings.end(), node);
+        if (it == siblings.end())
+            return { false, false };
+
+        const bool keepLeading = isHtmlSpace(text.front()) && it != siblings.begin() && isInlineHtmlNode(*std::prev(it));
+        const bool keepTrailing = isHtmlSpace(text.back()) && std::next(it) != siblings.end() && isInlineHtmlNode(*std::next(it));
+        return { keepLeading, keepTrailing };
+    }
+
     void normalizeWhiteSpace(std::string& s, bool collapseSpaces, bool keepNewlines) {
         std::string out;
         out.reserve(s.size());
@@ -664,14 +699,25 @@ void UIWidget::applyWhiteSpace() {
     setProp(PropTextHorizontalAutoResize, false);
     setProp(PropTextVerticalAutoResize, false);
 
+    const auto [keepLeadingSpace, keepTrailingSpace] = inlineEdgeSpaces(m_htmlNode, m_text);
+    const auto collapse = [&](const bool keepNewlines) {
+        normalizeWhiteSpace(m_text, true, keepNewlines);
+        if (m_text.empty())
+            return;
+        if (keepLeadingSpace)
+            m_text.insert(m_text.begin(), ' ');
+        if (keepTrailingSpace)
+            m_text.push_back(' ');
+    };
+
     if (whiteSpace == "normal") {
         setProp(PropTextWrap, true);
-        normalizeWhiteSpace(m_text, true, false);
+        collapse(false);
     } else if (whiteSpace == "nowrap") {
         setProp(PropTextWrap, false);
         setProp(PropTextHorizontalAutoResize, true);
         setProp(PropTextVerticalAutoResize, true);
-        normalizeWhiteSpace(m_text, true, false);
+        collapse(false);
     } else if (whiteSpace == "pre") {
         stripPreStartNewline(m_text);
         setProp(PropTextWrap, false);
@@ -683,10 +729,10 @@ void UIWidget::applyWhiteSpace() {
     } else if (whiteSpace == "pre-line") {
         stripPreStartNewline(m_text);
         setProp(PropTextWrap, true);
-        normalizeWhiteSpace(m_text, true, true);
+        collapse(true);
     } else {
         setProp(PropTextWrap, true);
-        normalizeWhiteSpace(m_text, true, false);
+        collapse(false);
     }
     computeHtmlTextIntrinsicSize();
 }

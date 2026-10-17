@@ -187,6 +187,10 @@ TexturePtr TextureManager::loadTexture(std::stringstream& file)
             texture = std::make_shared<Texture>(image, false, false);
         }
         free_apng(&apng);
+    } else {
+        const std::string buffer{ file.str() };
+        if (const auto& image = Image::loadJPEG(buffer.data(), buffer.size()))
+            texture = std::make_shared<Texture>(image, false, false);
     }
 
     return texture;
