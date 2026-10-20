@@ -277,6 +277,18 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
 
     const auto& virtualParentWidget = widget->getPositionType() == PositionType::Absolute ? widget->getVirtualParent() : nullptr;
 
+    const auto display = widget->getDisplay();
+    const auto parentDisplay = parentWidget->getDisplay();
+    const bool autoMarginBlock =
+        widget->isOnHtml() &&
+        (widget->isMarginLeftAuto() || widget->isMarginRightAuto()) &&
+        widget->getPositionType() != PositionType::Absolute &&
+        widget->getFloat() == FloatType::None &&
+        (display == DisplayType::Block || display == DisplayType::Table ||
+         display == DisplayType::ListItem || display == DisplayType::Flex || display == DisplayType::Grid) &&
+        (parentDisplay == DisplayType::Block || parentDisplay == DisplayType::InlineBlock ||
+         parentDisplay == DisplayType::TableCell || parentDisplay == DisplayType::ListItem);
+
     // calculates new rect based on anchors
     for (const auto& anchor : anchorGroup->getAnchors()) {
         // skip invalid anchors
@@ -311,6 +323,29 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
         }
 
         const int point = anchor->getHookedPoint(hookedWidget, parentWidget);
+        const auto edge = anchor->getAnchoredEdge();
+        if (autoMarginBlock && hookedWidget == parentWidget &&
+            (edge == Fw::AnchorLeft || edge == Fw::AnchorRight || edge == Fw::AnchorHorizontalCenter)) {
+            // Resolve against the final containing width on every layout pass,
+            // including after table sizing, image loading and parent resizing.
+            const auto& innerRect = parentWidget->getPaddingRect();
+            const int marginLeft = widget->isMarginLeftAuto() ? 0 : widget->getMarginLeft();
+            const int marginRight = widget->isMarginRightAuto() ? 0 : widget->getMarginRight();
+            const int freeSpace = std::max(0, innerRect.width() - newRect.width() - marginLeft - marginRight);
+            const int autoLeft = widget->isMarginLeftAuto()
+                ? freeSpace / (widget->isMarginRightAuto() ? 2 : 1) : 0;
+            int offset = 0;
+            if (widget->getPositionType() == PositionType::Relative) {
+                const auto& positions = widget->getPositions();
+                if (positions.left.unit != Unit::Auto)
+                    offset = positions.left.value;
+                else if (positions.right.unit != Unit::Auto)
+                    offset = -positions.right.value;
+            }
+            newRect.moveLeft(innerRect.left() - parentWidget->getVirtualOffset().x + marginLeft + autoLeft + offset);
+            horizontalMoved = true;
+            continue;
+        }
         switch (anchor->getAnchoredEdge()) {
             case Fw::AnchorHorizontalCenter: {
                 auto margin = widget->getMarginLeft() - widget->getMarginRight();
