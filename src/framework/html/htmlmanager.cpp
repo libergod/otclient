@@ -341,10 +341,11 @@ namespace {
                     const auto applyDecl = [&](const std::string& style, const css::Declaration& decl) {
                         auto& styleMap = node->getStyles()[style];
                         const auto it = styleMap.find(decl.property);
-                        // Universal (*) defaults never replace inherited or matched values.
                         const bool canSet = it == styleMap.end() || (is_all
-                            ? (it->second.universal && !it->second.important) || decl.important
-                            : !it->second.important);
+                            ? (it->second.universal
+                                ? !it->second.important || decl.important
+                                : decl.important && !it->second.important)
+                            : !it->second.important || (it->second.universal && decl.important));
                         if (!canSet)
                             return;
 

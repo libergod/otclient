@@ -699,7 +699,7 @@ function UITreeView:applyFilters()
                     end
                 end
 
-                if showSubCategory and activeText then
+                if not showCategory and showSubCategory and activeText then
                     showSubCategory = subCategory.Button.Title:getText():lower():find(activeText, 1, true) ~= nil
                 end
 
@@ -1060,4 +1060,3 @@ function UITreeView:removeCategoryOrSubCategory(categoryName, subCategoryName, c
     self:updateLayout()
     return true
 end
-
