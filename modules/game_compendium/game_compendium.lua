@@ -175,6 +175,15 @@ local function sanitizeHtml(text, links)
         return open .. body .. close
     end)
     -- Text between "{{" and "}}" is evaluated as Lua by the HTML engine.
+    text = text:gsub("&#([xX]?)([%da-fA-F]+);", function(base, digits)
+        local codepoint = tonumber(digits, base == "" and 10 or 16)
+        if codepoint == 123 then
+            return "{ "
+        elseif codepoint == 125 then
+            return "} "
+        end
+        return "&#" .. base .. digits .. ";"
+    end)
     text = text:gsub("{{", "{ {"):gsub("}}", "} }")
     return text
 end
