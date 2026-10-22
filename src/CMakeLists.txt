@@ -213,7 +213,13 @@ else()
 endif()
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
-find_package(Stb REQUIRED)
+find_package(Stb QUIET)
+if(NOT Stb_FOUND)
+  find_path(Stb_INCLUDE_DIR "stb_image.h")
+  if(NOT Stb_INCLUDE_DIR)
+    message(FATAL_ERROR "Stb not found: install a Stb package or make stb_image.h available")
+  endif()
+endif()
 
 if(APPLE)
   # Required for Physfs
