@@ -189,7 +189,21 @@ TexturePtr TextureManager::loadTexture(std::stringstream& file)
         free_apng(&apng);
     } else {
         const std::string buffer{ file.str() };
-        if (const auto& image = Image::loadJPEG(buffer.data(), buffer.size()))
+        auto image = Image::loadJPEG(buffer.data(), buffer.size());
+        if (!image)
+            image = Image::loadGIF(buffer.data(), buffer.size());
+        if (image && image->isAnimated()) {
+            std::vector<ImagePtr> frames;
+            std::vector<uint16_t> framesDelay;
+            for (const auto& frame : image->getAnimation()) {
+                frames.emplace_back(frame.image);
+                framesDelay.push_back(static_cast<uint16_t>(frame.delay));
+            }
+
+            const auto& animatedTexture = std::make_shared<AnimatedTexture>(image->getSize(), frames, framesDelay, image->getAnimationPlays());
+            std::scoped_lock l(m_mutex);
+            texture = m_animatedTextures.emplace_back(animatedTexture);
+        } else if (image)
             texture = std::make_shared<Texture>(image, false, false);
     }
 
