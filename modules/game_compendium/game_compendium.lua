@@ -712,6 +712,10 @@ function compendiumController:onTerminate()
 end
 
 function compendiumController:onGameStart()
+    if g_game.getClientVersion() < 1100 then
+        return
+    end
+
     if not compendiumButton then
         compendiumButton = modules.game_mainpanel.addToggleButton("compendiumButton", tr("Compendium"),
             IMAGES_PATH .. "button_compendium", toggle, false, 22)
