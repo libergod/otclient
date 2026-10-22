@@ -143,10 +143,6 @@ local function sanitizeHtml(text, links)
     text = text:gsub("<!%-%-.-%-%->", "")
     text = text:gsub("<[sS][cC][rR][iI][pP][tT].-</[sS][cC][rR][iI][pP][tT]%s*>", "")
     text = text:gsub("<[sS][tT][yY][lL][eE].-</[sS][tT][yY][lL][eE]%s*>", "")
-    -- Text between "{{" and "}}" is evaluated as Lua by the HTML engine.
-    while text:find("{{", 1, true) do
-        text = text:gsub("{{", "{ {")
-    end
     -- Relative/empty image sources would resolve against the module folder and fail to load.
     text = text:gsub("<[iI][mM][gG][^>]*>", function(tag)
         if tag:find("[sS][rR][cC]%s*=%s*[\"']?[hH][tT][tT][pP][sS]?://") then
@@ -178,6 +174,8 @@ local function sanitizeHtml(text, links)
         end)
         return open .. body .. close
     end)
+    -- Text between "{{" and "}}" is evaluated as Lua by the HTML engine.
+    text = text:gsub("{{", "{ {"):gsub("}}", "} }")
     return text
 end
 
@@ -571,6 +569,10 @@ local function requestRemoteNews()
         local status, remoteNews = pcall(json.decode, jsonPart)
         if not status or not isValidNewsData(remoteNews) or #remoteNews.gamenews == 0 then
             g_logger.warning("[Compendium] News response has an invalid format")
+            return
+        end
+
+        if getDataTimestamp(remoteNews) <= getDataTimestamp(newsData) then
             return
         end
 

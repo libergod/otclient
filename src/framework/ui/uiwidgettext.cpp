@@ -702,8 +702,12 @@ void UIWidget::applyWhiteSpace() {
     const auto [keepLeadingSpace, keepTrailingSpace] = inlineEdgeSpaces(m_htmlNode, m_text);
     const auto collapse = [&](const bool keepNewlines) {
         normalizeWhiteSpace(m_text, true, keepNewlines);
-        if (m_text.empty())
+        if (m_text.empty()) {
+            if (!keepLeadingSpace && !keepTrailingSpace)
+                return;
+            m_text = " ";
             return;
+        }
         if (keepLeadingSpace)
             m_text.insert(m_text.begin(), ' ');
         if (keepTrailingSpace)
