@@ -269,6 +269,11 @@ center {
   text-align: center;
 }
 
+center table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Font weight/style/decoration are not supported, so dedicated font faces are used instead. */
 strong,
 b,
