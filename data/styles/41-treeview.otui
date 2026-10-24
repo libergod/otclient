@@ -1,5 +1,5 @@
 ButtonTibia14 < UIButton
-  font: verdana-11px-antialised
+  font: $var-font
   margin: -1
   text-offset: 0 0
   image-source: /images/ui/button
@@ -64,7 +64,7 @@ TreeCategory < UIWidget
       id: Title
       anchors.left: Icon.right
       anchors.verticalCenter: Icon.verticalCenter
-      margin-left: 5
+      margin-left: -12
       text-align: left
       !text: tr('General Stats')
       color: #ffffff

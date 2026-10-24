@@ -489,6 +489,7 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
         styles->addChild(nodeAttr);
     }
 
+    g_ui.resolveStyleAliases(styles);
     widget->mergeStyle(styles);
 
     if (node->getTag() == "input" && node->getAttr("type") == "radio")
